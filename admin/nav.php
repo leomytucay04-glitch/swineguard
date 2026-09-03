@@ -25,8 +25,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
             Swine Guard
         </a>
         
-        <!-- VISIBLE TIMEOUT BADGE (Change 'display: flex' to 'display: none' when finished testing) -->
-        <div id="session-timer-badge" class="ms-3 px-3 py-1 bg-dark text-warning rounded-pill border border-warning small align-items-center" style="display: block;">
+        <!-- TIMEOUT BADGE (Hidden) -->
+        <div id="session-timer-badge" class="ms-3 px-3 py-1 bg-dark text-warning rounded-pill border border-warning small align-items-center" style="display: none !important;">
             <i class="fa-solid fa-clock me-2"></i>
             <span>Session Timeout: <strong id="timer-display">15:00</strong></span>
         </div>
@@ -179,8 +179,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         color: #ef4444 !important;
     }
 
-    /* TOGGLE VISIBILITY HERE WHEN DONE TESTING */
+    /* Hidden session timer badge */
     #session-timer-badge {
-        display: flex; /* Change 'flex' to 'none' to hide the timer */
+        display: none !important;
     }
 </style>
