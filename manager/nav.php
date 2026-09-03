@@ -1,7 +1,7 @@
 <?php
 
 // Set maximum idle time to 2 minutes (120 seconds)
-$timeout_duration = 1800;
+$timeout_duration = 300;
 
 if (isset($_SESSION['last_activity2'])) {
     if ((time() - $_SESSION['last_activity2']) > $timeout_duration) {
@@ -24,7 +24,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
         
         <!-- VISIBLE TIMEOUT BADGE (Set 'display: flex' to show, 'display: none' to hide) -->
-        <div id="session-timer-badge" class="ms-3 px-3 py-1 bg-dark text-warning rounded-pill border border-warning small align-items-center" style="display: flex;">
+        <div id="session-timer-badge" class="ms-3 px-3 py-1 bg-dark text-warning rounded-pill border border-warning small align-items-center" style="display: none !important;">
             <i class="fa-solid fa-clock me-2"></i>
             <span>Session Timeout: <strong id="timer-display">02:00</strong></span>
         </div>
@@ -175,6 +175,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
     /* TOGGLE VISIBILITY HERE */
     #session-timer-badge {
-        display: flex; /* Set to 'none' when you want to hide the timer badge */
+        display: none !important; /* Set to 'none' when you want to hide the timer badge */
     }
 </style>
