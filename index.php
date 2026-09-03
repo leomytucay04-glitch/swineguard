@@ -276,7 +276,9 @@ if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
                 processData: false,
                 success: function(response) {
                     response = response.trim();
-                    if (response === "success") {
+                    if (response === "require_email") {
+                        window.location.href = "add_email.php";
+                    } else if (response === "success") {
                         window.location.href = "admin/dashboard.php";
                     } else {
                         Swal.fire({

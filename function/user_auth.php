@@ -1,9 +1,12 @@
 <?php
-// Start session
-session_start();
+// Start session safely
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include database connection
-include '../include/dbcon.php';
+require_once __DIR__ . '/../include/dbcon.php';
+$conn = $GLOBALS['conn'] ?? $conn;
 
 // Retrieve POST variables safely
 $username = isset($_POST['username']) ? trim($_POST['username']) : '';
@@ -14,8 +17,8 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
-// Query the 'users' table including the status field
-$stmt = mysqli_prepare($conn, "SELECT id, name, username, role, status FROM users WHERE username = ? AND password = ?");
+// Query the 'users' table including email and verification status
+$stmt = mysqli_prepare($conn, "SELECT id, name, username, role, status, email, email_verified FROM users WHERE username = ? AND password = ?");
 
 if ($stmt) {
     // Bind parameters
@@ -25,21 +28,40 @@ if ($stmt) {
     mysqli_stmt_execute($stmt);
 
     // Bind result variables
-    mysqli_stmt_bind_result($stmt, $userId, $name, $userUsername, $role, $status);
+    mysqli_stmt_bind_result($stmt, $userId, $name, $userUsername, $role, $status, $email, $emailVerified);
 
     if (mysqli_stmt_fetch($stmt)) {
         // Check if account status is disabled
         if (strtolower(trim($status)) === 'disable' || strtolower(trim($status)) === 'disabled') {
             echo "disable";
         } else {
-            // User authenticated successfully -> set session variables
-            $_SESSION['user']          = $userId;
-            $_SESSION['user_name']     = $name;
-            $_SESSION['user_username'] = $userUsername;
-            $_SESSION['role']          = $role;
+            $userEmail = trim((string)$email);
+            $isVerified = (int)$emailVerified;
 
-            // Echo the exact role string for AJAX redirection
-            echo trim($role);
+            // Gatekeeper: If email is missing or not verified, require email verification
+            if (empty($userEmail) || $isVerified !== 1) {
+                // DO NOT grant full login session yet
+                $_SESSION['pending_auth'] = [
+                    'id'             => $userId,
+                    'name'           => $name,
+                    'username'       => $userUsername,
+                    'role'           => $role,
+                    'type'           => 'user',
+                    'email'          => $userEmail,
+                    'email_verified' => $isVerified
+                ];
+
+                echo "require_email";
+            } else {
+                // User authenticated successfully with verified email -> set full session variables
+                $_SESSION['user']          = $userId;
+                $_SESSION['user_name']     = $name;
+                $_SESSION['user_username'] = $userUsername;
+                $_SESSION['role']          = $role;
+
+                // Echo the exact role string for AJAX redirection
+                echo trim($role);
+            }
         }
     } else {
         // Authentication failed
@@ -54,4 +76,6 @@ if ($stmt) {
 
 // Close database connection
 mysqli_close($conn);
+$GLOBALS['conn'] = null;
+unset($conn);
 ?>

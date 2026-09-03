@@ -8,7 +8,7 @@ $user_id      = $_SESSION['user'] ?? 0;
 $session_role = $_SESSION['role'] ?? 'client';
 
 // 2. Query the 'users' table using the active session ID
-$query = "SELECT id, name, username, role FROM users WHERE id = ?";
+$query = "SELECT id, name, username, role, email FROM users WHERE id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -16,9 +16,10 @@ $user_data = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 // Fallback values if database record is blank
-$display_name = !empty($user_data['name']) ? htmlspecialchars($user_data['name']) : 'User Account';
-$display_user = !empty($user_data['username']) ? htmlspecialchars($user_data['username']) : 'user';
-$user_role    = !empty($user_data['role']) ? strtolower($user_data['role']) : strtolower($session_role);
+$display_name  = !empty($user_data['name']) ? htmlspecialchars($user_data['name']) : 'User Account';
+$display_user  = !empty($user_data['username']) ? htmlspecialchars($user_data['username']) : 'user';
+$display_email = !empty($user_data['email']) ? htmlspecialchars($user_data['email']) : 'Not linked';
+$user_role     = !empty($user_data['role']) ? strtolower($user_data['role']) : strtolower($session_role);
 
 // Role badge formatting
 $role_badge_class = ($user_role === 'manager') ? 'bg-primary' : 'bg-success';
@@ -149,9 +150,13 @@ $role_title       = ucfirst($user_role); // "Manager" or "Client"
                                 <label class="form-label small fw-semibold text-secondary">Username</label>
                                 <input type="text" class="form-control" name="username" value="<?php echo $display_user; ?>" required>
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label small fw-semibold text-secondary">System Role</label>
                                 <input type="text" class="form-control text-muted" value="<?php echo $role_title; ?>" readonly disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Verified Gmail <i class="fa-solid fa-circle-check text-success ms-1"></i></label>
+                                <input type="email" class="form-control text-muted" value="<?php echo $display_email; ?>" readonly disabled>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm">Save Personal Changes</button>

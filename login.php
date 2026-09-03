@@ -294,7 +294,9 @@ if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
                 processData: false,
                 success: function(response) {
                     response = response.trim();
-                    if (response === "manager") {
+                    if (response === "require_email") {
+                        window.location.href = "add_email.php";
+                    } else if (response === "manager") {
                         window.location.href = "manager/dashboard.php";
                     } else if (response === "client") {
                         window.location.href = "client/dashboard.php";

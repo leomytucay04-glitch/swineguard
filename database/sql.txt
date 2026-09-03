@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   `name` varchar(250) DEFAULT NULL,
   `username` varchar(250) DEFAULT NULL,
   `password` varchar(250) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `email_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `verification_code` varchar(10) DEFAULT NULL,
+  `code_expires_at` datetime DEFAULT NULL,
   `role` enum('client', 'manager') NOT NULL DEFAULT 'client',
   `status` enum('active', 'disabled') NOT NULL DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP

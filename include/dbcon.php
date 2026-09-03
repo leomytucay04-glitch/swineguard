@@ -23,15 +23,26 @@ if (!function_exists('online')) {
 
 // 2. Only connect if $conn is not already active
 if (!isset($conn) || !($conn instanceof mysqli) || @mysqli_ping($conn) === false) {
+    if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli) && @mysqli_ping($GLOBALS['conn']) !== false) {
+        $conn = $GLOBALS['conn'];
+    } else {
+        // Select environment
+        localhost();
+        // online();
 
-    // Select environment
-    localhost();
-    // online();
+        $conn = mysqli_connect(
+            $GLOBALS['dbservername'] ?? $dbservername,
+            $GLOBALS['dbusername'] ?? $dbusername,
+            $GLOBALS['dbpassword'] ?? $dbpassword,
+            $GLOBALS['dbname'] ?? $dbname
+        );
 
-    $conn = mysqli_connect($dbservername, $dbusername, $dbpassword, $dbname);
-
-    if (!$conn) {
-        die("Connection failed: " . mysqli_connect_error());
+        if (!$conn) {
+            die("Connection failed: " . mysqli_connect_error());
+        }
+        $GLOBALS['conn'] = $conn;
     }
+} else {
+    $GLOBALS['conn'] = $conn;
 }
 ?>
