@@ -1,7 +1,7 @@
 <?php
 
 // Set maximum idle time to 5 minutes (300 seconds)
-$timeout_duration = 3600;
+$timeout_duration = 600;
 
 if (isset($_SESSION['last_activity1'])) {
     if ((time() - $_SESSION['last_activity1']) > $timeout_duration) {
