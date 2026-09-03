@@ -32,6 +32,9 @@ CREATE TABLE `admin` (
   `name` varchar(250) DEFAULT NULL,
   `username` varchar(250) DEFAULT NULL,
   `email` varchar(250) DEFAULT NULL,
+  `email_verified` tinyint(1) NOT NULL DEFAULT 1,
+  `verification_code` varchar(10) DEFAULT NULL,
+  `code_expires_at` datetime DEFAULT NULL,
   `password` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -39,8 +42,8 @@ CREATE TABLE `admin` (
 -- Dumping data for table `admin`
 --
 
-INSERT INTO `admin` (`id`, `name`, `username`, `email`, `password`) VALUES
-(1, 'System Admin', 'admin', 'admin@swineguard.com', 'admin');
+INSERT INTO `admin` (`id`, `name`, `username`, `email`, `email_verified`, `password`) VALUES
+(1, 'System Admin', 'admin', 'admin@swineguard.com', 1, 'admin');
 
 -- --------------------------------------------------------
 
