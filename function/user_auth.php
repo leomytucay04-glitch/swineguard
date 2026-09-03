@@ -17,6 +17,15 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
+// Ensure users table has email verification columns if missing
+$checkCol = mysqli_query($conn, "SHOW COLUMNS FROM `users` LIKE 'email'");
+if ($checkCol && mysqli_num_rows($checkCol) === 0) {
+    @mysqli_query($conn, "ALTER TABLE `users` ADD COLUMN `email` VARCHAR(255) DEFAULT NULL AFTER `password`");
+    @mysqli_query($conn, "ALTER TABLE `users` ADD COLUMN `email_verified` TINYINT(1) NOT NULL DEFAULT 0 AFTER `email`");
+    @mysqli_query($conn, "ALTER TABLE `users` ADD COLUMN `verification_code` VARCHAR(10) DEFAULT NULL AFTER `email_verified`");
+    @mysqli_query($conn, "ALTER TABLE `users` ADD COLUMN `code_expires_at` DATETIME DEFAULT NULL AFTER `verification_code`");
+}
+
 // Query the 'users' table including email and verification status
 $stmt = mysqli_prepare($conn, "SELECT id, name, username, role, status, email, email_verified FROM users WHERE username = ? AND password = ?");
 
@@ -71,7 +80,35 @@ if ($stmt) {
     // Close statement
     mysqli_stmt_close($stmt);
 } else {
-    echo "Database error occurred.";
+    // Fallback if users table doesn't have email columns
+    $fallbackStmt = mysqli_prepare($conn, "SELECT id, name, username, role, status FROM users WHERE username = ? AND password = ?");
+    if ($fallbackStmt) {
+        mysqli_stmt_bind_param($fallbackStmt, "ss", $username, $password);
+        mysqli_stmt_execute($fallbackStmt);
+        mysqli_stmt_bind_result($fallbackStmt, $userId, $name, $userUsername, $role, $status);
+
+        if (mysqli_stmt_fetch($fallbackStmt)) {
+            if (strtolower(trim($status)) === 'disable' || strtolower(trim($status)) === 'disabled') {
+                echo "disable";
+            } else {
+                $_SESSION['pending_auth'] = [
+                    'id'             => $userId,
+                    'name'           => $name,
+                    'username'       => $userUsername,
+                    'role'           => $role,
+                    'type'           => 'user',
+                    'email'          => '',
+                    'email_verified' => 0
+                ];
+                echo "require_email";
+            }
+        } else {
+            echo "Invalid username or password.";
+        }
+        mysqli_stmt_close($fallbackStmt);
+    } else {
+        echo "Database error: " . mysqli_error($conn);
+    }
 }
 
 // Close database connection

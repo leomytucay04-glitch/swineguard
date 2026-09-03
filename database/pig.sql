@@ -559,6 +559,10 @@ CREATE TABLE `users` (
   `name` varchar(250) DEFAULT NULL,
   `username` varchar(250) DEFAULT NULL,
   `password` varchar(250) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `email_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `verification_code` varchar(10) DEFAULT NULL,
+  `code_expires_at` datetime DEFAULT NULL,
   `role` enum('client','manager') NOT NULL DEFAULT 'client',
   `status` enum('active','disabled') NOT NULL DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -568,8 +572,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `username`, `password`, `role`, `status`, `created_at`) VALUES
-(1, '1', '1', '1', 'manager', 'active', '2026-08-22 08:30:31');
+INSERT INTO `users` (`id`, `name`, `username`, `password`, `email`, `email_verified`, `verification_code`, `code_expires_at`, `role`, `status`, `created_at`) VALUES
+(1, '1', '1', '1', NULL, 0, NULL, NULL, 'manager', 'active', '2026-08-22 08:30:31');
 
 --
 -- Indexes for dumped tables
