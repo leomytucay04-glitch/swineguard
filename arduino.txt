@@ -1,0 +1,243 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <WiFiManager.h>
+#include "DHT.h"
+
+#define FLOAT_SWITCH_PIN 14
+#define DHTPIN 4
+#define DHTTYPE DHT21
+
+#define COOLING_FAN_PIN 16
+#define EXHAUST_FAN_PIN 27
+#define PUMP_RELAY_PIN 17
+#define HEATER_RELAY_PIN 26
+#define BUZZER_PIN 18
+
+#define RELAY_ON LOW
+#define RELAY_OFF HIGH
+
+const char* serverDomain = "https://swinemonitoring.site";
+
+DHT dht(DHTPIN, DHTTYPE);
+
+unsigned long lastSendTime = 0;
+const unsigned long sendInterval = 5000;
+
+unsigned long lastBuzzerToggle = 0;
+bool buzzerState = false;
+
+String currentCoolingStatus = "off";
+String currentExhaustStatus = "off";
+String currentPumpStatus    = "off";
+String currentHeaterStatus  = "off";
+
+int failedActionCount = 0;
+const int MAX_FAILED_ATTEMPTS = 5;
+bool isFallbackMode = false;
+bool isWaterCritical = false;
+
+const float FALLBACK_TEMP_ON    = 30.0;
+const float FALLBACK_TEMP_OFF   = 26.0;
+const float FALLBACK_HUM_ON     = 60.0;
+const float FALLBACK_HUM_OFF    = 75.0;
+const float FALLBACK_HEATER_ON  = 20.0;
+const float FALLBACK_HEATER_OFF = 25.0;
+
+void handleBuzzer(bool waterCritical, bool fallbackMode) {
+  unsigned long now = millis();
+
+  if (waterCritical) {
+    if (now - lastBuzzerToggle >= 700) {
+      lastBuzzerToggle = now;
+      buzzerState = !buzzerState;
+      digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+    }
+  } 
+  else if (fallbackMode) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    buzzerState = false;
+  } 
+  else {
+    digitalWrite(BUZZER_PIN, LOW);
+    buzzerState = false;
+  }
+}
+
+void runFallbackLogic(float temperature, float humidity) {
+  if (!isnan(temperature)) {
+    if (temperature >= FALLBACK_TEMP_ON) {
+      digitalWrite(COOLING_FAN_PIN, RELAY_OFF);
+      digitalWrite(EXHAUST_FAN_PIN, RELAY_OFF);
+      currentCoolingStatus = "on";
+      currentExhaustStatus = "on";
+    } else if (temperature <= FALLBACK_TEMP_OFF) {
+      digitalWrite(COOLING_FAN_PIN, RELAY_ON);
+      digitalWrite(EXHAUST_FAN_PIN, RELAY_ON);
+      currentCoolingStatus = "off";
+      currentExhaustStatus = "off";
+    }
+
+    if (currentHeaterStatus == "off" && temperature <= FALLBACK_HEATER_ON) {
+      digitalWrite(HEATER_RELAY_PIN, RELAY_ON);
+      currentHeaterStatus = "on";
+    } else if (currentHeaterStatus == "on" && temperature >= FALLBACK_HEATER_OFF) {
+      digitalWrite(HEATER_RELAY_PIN, RELAY_OFF);
+      currentHeaterStatus = "off";
+    }
+  }
+
+  if (!isnan(humidity)) {
+    if (currentPumpStatus == "off" && humidity <= FALLBACK_HUM_ON) {
+      digitalWrite(PUMP_RELAY_PIN, RELAY_ON);
+      currentPumpStatus = "on";
+    } else if (currentPumpStatus == "on" && humidity >= FALLBACK_HUM_OFF) {
+      digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
+      currentPumpStatus = "off";
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  pinMode(COOLING_FAN_PIN, OUTPUT);
+  pinMode(EXHAUST_FAN_PIN, OUTPUT);
+  pinMode(PUMP_RELAY_PIN, OUTPUT);
+  pinMode(HEATER_RELAY_PIN, OUTPUT);
+  
+  digitalWrite(COOLING_FAN_PIN, RELAY_OFF);
+  digitalWrite(EXHAUST_FAN_PIN, RELAY_OFF);
+  digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
+  digitalWrite(HEATER_RELAY_PIN, RELAY_OFF);
+
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  pinMode(FLOAT_SWITCH_PIN, INPUT_PULLUP);
+  dht.begin();
+
+  WiFiManager wm;
+  bool success = wm.autoConnect("PIG_MONITOR", "password");
+
+  if (!success) {
+    delay(3000);
+    ESP.restart();
+  }
+}
+
+void loop() {
+  int switchState = digitalRead(FLOAT_SWITCH_PIN);
+  isWaterCritical = (switchState != LOW);
+
+  handleBuzzer(isWaterCritical, isFallbackMode);
+
+  unsigned long now = millis();
+
+  if (now - lastSendTime >= sendInterval) {
+
+    float temperature = dht.readTemperature();
+    float humidity    = dht.readHumidity();
+
+    String tempVal = isnan(temperature) ? "0.0" : String(temperature, 1);
+    String humVal  = isnan(humidity) ? "0.0" : String(humidity, 1);
+    String waterStatus = isWaterCritical ? "Critical" : "Normal";
+
+    bool actionSuccess = false;
+
+    if (WiFi.status() == WL_CONNECTED) {
+      WiFiClientSecure client;
+      client.setInsecure();
+HTTPClient http;
+      http.setTimeout(5000);
+      http.setReuse(false);
+
+      String actionUrl = String(serverDomain) + "/action.php";
+      http.begin(client, actionUrl);
+      http.setUserAgent("ESP32-SwineMonitor/1.0");
+      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+      String actionData = "temperature=" + tempVal + 
+                          "&humidity=" + humVal + 
+                          "&cooling_status=" + currentCoolingStatus + 
+                          "&exhaust_status=" + currentExhaustStatus + 
+                          "&pump_status=" + currentPumpStatus + 
+                          "&heater_status=" + currentHeaterStatus;
+
+      int httpCodeAction = http.POST(actionData);
+
+      if (httpCodeAction > 0) {
+        String response = http.getString();
+        response.trim();
+
+        actionSuccess = true;
+
+        if (response.indexOf("\"cooling\":\"on\"") != -1) {
+          digitalWrite(COOLING_FAN_PIN, RELAY_ON);
+          currentCoolingStatus = "on";
+        } else if (response.indexOf("\"cooling\":\"off\"") != -1) {
+          digitalWrite(COOLING_FAN_PIN, RELAY_OFF);
+          currentCoolingStatus = "off";
+        }
+
+        if (response.indexOf("\"exhaust\":\"on\"") != -1) {
+          digitalWrite(EXHAUST_FAN_PIN, RELAY_ON);
+          currentExhaustStatus = "on";
+        } else if (response.indexOf("\"exhaust\":\"off\"") != -1) {
+          digitalWrite(EXHAUST_FAN_PIN, RELAY_OFF);
+          currentExhaustStatus = "off";
+        }
+
+        if (response.indexOf("\"pump\":\"on\"") != -1) {
+          digitalWrite(PUMP_RELAY_PIN, RELAY_ON);
+          currentPumpStatus = "on";
+        } else if (response.indexOf("\"pump\":\"off\"") != -1) {
+          digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
+          currentPumpStatus = "off";
+        }
+
+        if (response.indexOf("\"heater\":\"on\"") != -1) {
+          digitalWrite(HEATER_RELAY_PIN, RELAY_ON);
+          currentHeaterStatus = "on";
+        } else if (response.indexOf("\"heater\":\"off\"") != -1) {
+          digitalWrite(HEATER_RELAY_PIN, RELAY_OFF);
+          currentHeaterStatus = "off";
+        }
+
+      }
+      http.end();
+
+      delay(200);
+
+      String receiveUrl = String(serverDomain) + "/receive.php";
+      http.begin(client, receiveUrl);
+      http.setUserAgent("ESP32-SwineMonitor/1.0");
+      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+      String logData = "temperature=" + tempVal + 
+                       "&humidity=" + humVal + 
+                       "&water=" + waterStatus;
+
+      int httpCodeLog = http.POST(logData);
+      http.end();
+
+    }
+
+    if (actionSuccess) {
+      failedActionCount = 0; 
+      if (isFallbackMode) {
+        isFallbackMode = false;
+      }
+    } else {
+      failedActionCount++;
+
+      if (failedActionCount >= MAX_FAILED_ATTEMPTS) {
+        if (!isFallbackMode) {
+          isFallbackMode = true;
+        }
+        runFallbackLogic(temperature, humidity);
+      }
+    }
+  }
+}

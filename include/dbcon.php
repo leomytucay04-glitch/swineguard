@@ -14,10 +14,11 @@ if (!function_exists('localhost')) {
 if (!function_exists('online')) {
     function online()
     {
-        $GLOBALS['dbservername'] = "sql300.infinityfree.com";
-        $GLOBALS['dbusername']   = "if0_36673365";
-        $GLOBALS['dbpassword']   = "CC0CvHt9bZtT570";
-        $GLOBALS['dbname']       = "if0_36673365_wheel";
+        // Hostinger Database Configuration
+        $GLOBALS['dbservername'] = "localhost";
+        $GLOBALS['dbusername']   = "u793614128_user_pig";
+        $GLOBALS['dbpassword']   = "YOUR_HOSTINGER_DB_PASSWORD"; // <-- REPLACE WITH YOUR HOSTINGER DB PASSWORD
+        $GLOBALS['dbname']       = "u793614128_pig";
     }
 }
 
@@ -26,9 +27,13 @@ if (!isset($conn) || !($conn instanceof mysqli) || @mysqli_ping($conn) === false
     if (isset($GLOBALS['conn']) && ($GLOBALS['conn'] instanceof mysqli) && @mysqli_ping($GLOBALS['conn']) !== false) {
         $conn = $GLOBALS['conn'];
     } else {
-        // Select environment
-        localhost();
-        // online();
+        // Automatic environment detection (swinemonitoring.site vs localhost)
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+            localhost();
+        } else {
+            online();
+        }
 
         $conn = mysqli_connect(
             $GLOBALS['dbservername'] ?? $dbservername,

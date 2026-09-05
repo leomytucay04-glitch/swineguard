@@ -157,6 +157,104 @@ include "../include/dbcon.php";
             border-radius: 16px;
             border: 1px solid #e2e8f0;
         }
+
+        /* Password Validation & Strength UI */
+        .password-checklist {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .password-req-item {
+            font-size: 0.78rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .password-req-item i {
+            font-size: 0.85rem;
+            transition: transform 0.2s ease;
+        }
+
+        .password-req-item.valid {
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .password-req-item.valid i {
+            color: #10b981;
+            transform: scale(1.1);
+        }
+
+        .password-req-item.invalid {
+            color: #64748b;
+        }
+
+        .password-req-item.invalid.has-input {
+            color: #ef4444;
+        }
+
+        .password-req-item.invalid.has-input i {
+            color: #ef4444;
+        }
+
+        .strength-bar-container {
+            height: 6px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .strength-weak {
+            width: 25%;
+            background-color: #ef4444;
+        }
+
+        .strength-fair {
+            width: 50%;
+            background-color: #f59e0b;
+        }
+
+        .strength-good {
+            width: 75%;
+            background-color: #3b82f6;
+        }
+
+        .strength-strong {
+            width: 100%;
+            background-color: #10b981;
+        }
+
+        .toggle-password-btn {
+            border: 1px solid #ced4da;
+            border-left: none;
+            background: #f8fafc;
+            color: #64748b;
+            padding: 0 14px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-password-btn:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
     </style>
 </head>
 
@@ -271,15 +369,52 @@ include "../include/dbcon.php";
                     <div class="modal-body py-3">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Full Name</label>
-                            <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. John Doe" required>
+                            <input type="text" name="name" id="add_user_name" class="form-control rounded-3" placeholder="e.g. John Doe" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Username</label>
-                            <input type="text" name="username" class="form-control rounded-3" placeholder="e.g. johndoe" required>
+                            <input type="text" name="username" id="add_user_username" class="form-control rounded-3" placeholder="e.g. johndoe" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Password</label>
-                            <input type="password" name="password" class="form-control rounded-3" placeholder="••••••••" required>
+                            <div class="input-group">
+                                <input type="password" name="password" id="add_user_password" class="form-control" style="border-radius: 8px 0 0 8px;" placeholder="••••••••" required autocomplete="new-password">
+                                <button type="button" class="btn toggle-password-btn" data-target="#add_user_password" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+
+                            <!-- Password Strength Progress Bar -->
+                            <div class="strength-bar-container">
+                                <div id="add_strength_bar" class="strength-bar"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="small text-secondary" style="font-size: 0.75rem;">Password Strength:</span>
+                                <span id="add_strength_text" class="small fw-semibold text-secondary" style="font-size: 0.75rem;">None</span>
+                            </div>
+
+                            <!-- Real-Time Password Checklist -->
+                            <div class="password-checklist">
+                                <div class="small fw-semibold text-dark mb-2"><i class="fa-solid fa-shield-halved me-1 text-success"></i>Security Requirements:</div>
+                                <div class="password-req-item" id="add_req_len">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Minimum length (8+ characters)</span>
+                                </div>
+                                <div class="password-req-item" id="add_req_case">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Uppercase and lowercase letters</span>
+                                </div>
+                                <div class="password-req-item" id="add_req_num">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>At least one number (0-9)</span>
+                                </div>
+                                <div class="password-req-item" id="add_req_spec">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>At least one special character (!@#$%...)</span>
+                                </div>
+                                <div class="password-req-item" id="add_req_common">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Not a common/weak password</span>
+                                </div>
+                                <div class="password-req-item" id="add_req_personal">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Doesn't contain username or personal info</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Role Access</label>
@@ -298,7 +433,7 @@ include "../include/dbcon.php";
                     </div>
                     <div class="modal-footer border-top-0 pt-0">
                         <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold">Save User</button>
+                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold" id="addUserSubmitBtn">Save User</button>
                     </div>
                 </form>
             </div>
@@ -327,7 +462,45 @@ include "../include/dbcon.php";
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">New Password <span class="text-muted fw-normal">(Leave blank to keep unchanged)</span></label>
-                            <input type="password" name="password" class="form-control rounded-3" placeholder="••••••••">
+                            <div class="input-group">
+                                <input type="password" name="password" id="edit_user_password" class="form-control" style="border-radius: 8px 0 0 8px;" placeholder="••••••••" autocomplete="new-password">
+                                <button type="button" class="btn toggle-password-btn" data-target="#edit_user_password" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+
+                            <!-- Edit Strength Meter & Checklist (shown only if typing password) -->
+                            <div id="edit_password_feedback" style="display: none;">
+                                <div class="strength-bar-container">
+                                    <div id="edit_strength_bar" class="strength-bar"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="small text-secondary" style="font-size: 0.75rem;">Password Strength:</span>
+                                    <span id="edit_strength_text" class="small fw-semibold text-secondary" style="font-size: 0.75rem;">None</span>
+                                </div>
+
+                                <div class="password-checklist">
+                                    <div class="small fw-semibold text-dark mb-2"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Security Requirements:</div>
+                                    <div class="password-req-item" id="edit_req_len">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>Minimum length (8+ characters)</span>
+                                    </div>
+                                    <div class="password-req-item" id="edit_req_case">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>Uppercase and lowercase letters</span>
+                                    </div>
+                                    <div class="password-req-item" id="edit_req_num">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>At least one number (0-9)</span>
+                                    </div>
+                                    <div class="password-req-item" id="edit_req_spec">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>At least one special character (!@#$%...)</span>
+                                    </div>
+                                    <div class="password-req-item" id="edit_req_common">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>Not a common/weak password</span>
+                                    </div>
+                                    <div class="password-req-item" id="edit_req_personal">
+                                        <i class="fa-solid fa-circle-xmark"></i> <span>Doesn't contain username or personal info</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Role Access</label>
@@ -346,7 +519,7 @@ include "../include/dbcon.php";
                     </div>
                     <div class="modal-footer border-top-0 pt-0">
                         <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold">Update Account</button>
+                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold" id="editUserSubmitBtn">Update Account</button>
                     </div>
                 </form>
             </div>
@@ -436,9 +609,181 @@ include "../include/dbcon.php";
             // Initial Call
             fetchUsers();
 
-            // Function 2: Add User AJAX
+            // Toggle Password Visibility Eye Icon
+            $(document).on('click', '.toggle-password-btn', function() {
+                const targetSelector = $(this).data('target');
+                const targetInput = $(targetSelector);
+                const icon = $(this).find('i');
+                if (targetInput.attr('type') === 'password') {
+                    targetInput.attr('type', 'text');
+                    icon.removeClass('fa-eye fa-regular').addClass('fa-eye-slash fa-solid text-primary');
+                } else {
+                    targetInput.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash fa-solid text-primary').addClass('fa-eye fa-regular');
+                }
+            });
+
+            // Common Weak Passwords Blacklist
+            const commonWeakPasswords = [
+                '123456', 'password', '12345678', 'qwerty', '123456789', '12345', '1234',
+                '111111', '1234567', 'dragon', 'welcome', 'admin', 'admin123', 'admin888',
+                'swineguard', 'pass1234', 'password123', 'iloveyou', 'sunshine', 'princess',
+                'monkey', 'shadow', 'master', 'football', 'baseball', 'superman', 'trustno1',
+                'letmein', 'login', 'p@ssword', 'p@ssw0rd', 'password1', '123123', 'root'
+            ];
+
+            // Password Security Rules Evaluation
+            function checkPasswordRules(password, username, fullName) {
+                const pwd = password || '';
+                const lower = pwd.toLowerCase();
+                const cleanUser = (username || '').trim().toLowerCase();
+                const cleanName = (fullName || '').trim().toLowerCase();
+
+                const len = pwd.length >= 8;
+                const hasCase = /[a-z]/.test(pwd) && /[A-Z]/.test(pwd);
+                const hasNum = /[0-9]/.test(pwd);
+                const hasSpec = /[^a-zA-Z0-9]/.test(pwd);
+                const notCommon = pwd.length > 0 && !commonWeakPasswords.includes(lower);
+
+                let noPersonal = true;
+                if (cleanUser.length >= 3 && lower.includes(cleanUser)) {
+                    noPersonal = false;
+                }
+                if (cleanName.length >= 3) {
+                    const parts = cleanName.split(/[\s,\.]+/);
+                    for (const part of parts) {
+                        if (part.length >= 3 && lower.includes(part)) {
+                            noPersonal = false;
+                            break;
+                        }
+                    }
+                }
+
+                return {
+                    len,
+                    hasCase,
+                    hasNum,
+                    hasSpec,
+                    notCommon,
+                    noPersonal,
+                    isValid: len && hasCase && hasNum && hasSpec && notCommon && noPersonal
+                };
+            }
+
+            // Real-time Checklist & Strength Bar UI Updater
+            function updateChecklistUI(prefix, result, password) {
+                const hasInput = (password && password.length > 0);
+
+                function setItem(elemId, isValid) {
+                    const el = $('#' + elemId);
+                    const icon = el.find('i');
+                    if (isValid) {
+                        el.removeClass('invalid has-input').addClass('valid');
+                        icon.removeClass('fa-circle-xmark').addClass('fa-circle-check');
+                    } else {
+                        el.removeClass('valid').addClass('invalid');
+                        if (hasInput) el.addClass('has-input');
+                        icon.removeClass('fa-circle-check').addClass('fa-circle-xmark');
+                    }
+                }
+
+                setItem(prefix + '_req_len', result.len);
+                setItem(prefix + '_req_case', result.hasCase);
+                setItem(prefix + '_req_num', result.hasNum);
+                setItem(prefix + '_req_spec', result.hasSpec);
+                setItem(prefix + '_req_common', result.notCommon);
+                setItem(prefix + '_req_personal', result.noPersonal);
+
+                // Calculate strength score
+                let score = 0;
+                if (result.len) score++;
+                if (result.hasCase) score++;
+                if (result.hasNum) score++;
+                if (result.hasSpec) score++;
+                if (result.notCommon) score++;
+                if (result.noPersonal) score++;
+
+                const bar = $('#' + prefix + '_strength_bar');
+                const text = $('#' + prefix + '_strength_text');
+
+                bar.removeClass('strength-weak strength-fair strength-good strength-strong');
+
+                if (!hasInput) {
+                    bar.css('width', '0%');
+                    text.text('None').attr('class', 'small fw-semibold text-secondary');
+                } else if (score <= 2) {
+                    bar.css('width', '25%').addClass('strength-weak');
+                    text.text('Weak').attr('class', 'small fw-bold text-danger');
+                } else if (score <= 4) {
+                    bar.css('width', '50%').addClass('strength-fair');
+                    text.text('Fair').attr('class', 'small fw-bold text-warning');
+                } else if (score === 5) {
+                    bar.css('width', '75%').addClass('strength-good');
+                    text.text('Good').attr('class', 'small fw-bold text-primary');
+                } else {
+                    bar.css('width', '100%').addClass('strength-strong');
+                    text.text('Strong & Secure').attr('class', 'small fw-bold text-success');
+                }
+            }
+
+            // Real-Time Event Handlers: Add User Modal
+            $('#add_user_password, #add_user_username, #add_user_name').on('input', function() {
+                const pwd = $('#add_user_password').val();
+                const username = $('#add_user_username').val();
+                const name = $('#add_user_name').val();
+                const result = checkPasswordRules(pwd, username, name);
+                updateChecklistUI('add', result, pwd);
+            });
+
+            $('#addUserModal').on('show.bs.modal', function() {
+                $('#addUserForm')[0].reset();
+                $('#add_user_password').attr('type', 'password');
+                $('#addUserModal .toggle-password-btn i').removeClass('fa-eye-slash fa-solid text-primary').addClass('fa-eye fa-regular');
+                updateChecklistUI('add', checkPasswordRules('', '', ''), '');
+            });
+
+            // Real-Time Event Handlers: Edit User Modal
+            $('#edit_user_password, #edit_username, #edit_name').on('input', function() {
+                const pwd = $('#edit_user_password').val();
+                const username = $('#edit_username').val();
+                const name = $('#edit_name').val();
+                if (pwd.length > 0) {
+                    $('#edit_password_feedback').slideDown(200);
+                    const result = checkPasswordRules(pwd, username, name);
+                    updateChecklistUI('edit', result, pwd);
+                } else {
+                    $('#edit_password_feedback').slideUp(200);
+                }
+            });
+
+            // Function 2: Add User AJAX with Password Validation Guard
             $('#addUserForm').on('submit', function(e) {
                 e.preventDefault();
+
+                const pwd = $('#add_user_password').val();
+                const username = $('#add_user_username').val();
+                const name = $('#add_user_name').val();
+                const val = checkPasswordRules(pwd, username, name);
+
+                if (!val.isValid) {
+                    let missingMsg = [];
+                    if (!val.len) missingMsg.push("• Minimum length (8+ characters)");
+                    if (!val.hasCase) missingMsg.push("• Uppercase and lowercase letters");
+                    if (!val.hasNum) missingMsg.push("• At least one number (0-9)");
+                    if (!val.hasSpec) missingMsg.push("• At least one special character (!@#$%...)");
+                    if (!val.notCommon) missingMsg.push("• Not a common/weak password");
+                    if (!val.noPersonal) missingMsg.push("• Must not contain username or personal info");
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Password Too Weak',
+                        html: '<div class="text-start small mt-2"><strong>Please meet all security requirements:</strong><br>' + missingMsg.join('<br>') + '</div>',
+                        confirmButtonColor: '#10b981',
+                        confirmButtonText: 'Understood'
+                    });
+                    return false;
+                }
+
                 $.ajax({
                     url: 'function/user_actions.php',
                     type: 'POST',
@@ -457,8 +802,11 @@ include "../include/dbcon.php";
                             });
                             fetchUsers();
                         } else {
-                            Swal.fire('Error', response.message, 'error');
+                            Swal.fire('Validation Error', response.message, 'error');
                         }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'An unexpected error occurred while adding the user.', 'error');
                     }
                 });
             });
@@ -470,12 +818,43 @@ include "../include/dbcon.php";
                 $('#edit_username').val($(this).data('username'));
                 $('#edit_role').val($(this).data('role'));
                 $('#edit_status').val($(this).data('status'));
+                $('#edit_user_password').val('').attr('type', 'password');
+                $('#editUserModal .toggle-password-btn i').removeClass('fa-eye-slash fa-solid text-primary').addClass('fa-eye fa-regular');
+                $('#edit_password_feedback').hide();
                 $('#editUserModal').modal('show');
             });
 
-            // Function 4: Edit User AJAX
+            // Function 4: Edit User AJAX with Password Validation Guard
             $('#editUserForm').on('submit', function(e) {
                 e.preventDefault();
+
+                const pwd = $('#edit_user_password').val();
+                const username = $('#edit_username').val();
+                const name = $('#edit_name').val();
+
+                // If user entered a new password, validate it
+                if (pwd.length > 0) {
+                    const val = checkPasswordRules(pwd, username, name);
+                    if (!val.isValid) {
+                        let missingMsg = [];
+                        if (!val.len) missingMsg.push("• Minimum length (8+ characters)");
+                        if (!val.hasCase) missingMsg.push("• Uppercase and lowercase letters");
+                        if (!val.hasNum) missingMsg.push("• At least one number (0-9)");
+                        if (!val.hasSpec) missingMsg.push("• At least one special character (!@#$%...)");
+                        if (!val.notCommon) missingMsg.push("• Not a common/weak password");
+                        if (!val.noPersonal) missingMsg.push("• Must not contain username or personal info");
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'New Password Too Weak',
+                            html: '<div class="text-start small mt-2"><strong>Please meet all security requirements:</strong><br>' + missingMsg.join('<br>') + '</div>',
+                            confirmButtonColor: '#10b981',
+                            confirmButtonText: 'Understood'
+                        });
+                        return false;
+                    }
+                }
+
                 $.ajax({
                     url: 'function/user_actions.php',
                     type: 'POST',
@@ -493,8 +872,11 @@ include "../include/dbcon.php";
                             });
                             fetchUsers();
                         } else {
-                            Swal.fire('Error', response.message, 'error');
+                            Swal.fire('Validation Error', response.message, 'error');
                         }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'An unexpected error occurred while updating the user.', 'error');
                     }
                 });
             });

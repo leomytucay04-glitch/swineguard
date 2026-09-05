@@ -29,6 +29,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$temperature', '$humidity', '$water', '$current_date', '$current_time')";
 
     if (mysqli_query($conn, $sql)) {
+        // Automatically check environmental alert thresholds and trigger SMS if needed
+        include_once __DIR__ . "/include/sms_helper.php";
+        check_and_trigger_sms_alerts($temperature, $humidity, $water);
+
         // This is what the ESP32 receives back on success!
         echo "Data saved successfully! Time: " . $current_time;
     } else {
