@@ -1,8 +1,11 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <WiFiManager.h>
 #include "DHT.h"
+
+
+const char* ssid     = "YOUR_WIFI_NAME";   
+const char* password = "YOUR_WIFI_PASSWORD"; 
 
 #define FLOAT_SWITCH_PIN 14
 #define DHTPIN 4
@@ -123,12 +126,26 @@ void setup() {
   pinMode(FLOAT_SWITCH_PIN, INPUT_PULLUP);
   dht.begin();
 
-  WiFiManager wm;
-  bool success = wm.autoConnect("PIG_MONITOR", "password");
+  // Connect directly to your Wi-Fi / Hotspot
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(ssid);
 
-  if (!success) {
-    delay(3000);
-    ESP.restart();
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 25) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n[Wi-Fi] Connected successfully!");
+    Serial.print("[Wi-Fi] ESP32 IP Address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\n[Wi-Fi] Connection failed. Operating in autonomous fallback mode.");
+    isFallbackMode = true;
   }
 }
 
