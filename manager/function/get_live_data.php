@@ -2,52 +2,55 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../include/dbcon.php';
 
-// 1. Trigger hardware offline watchdog if ESP32 has stopped transmitting (> 5 minutes)
-require_once __DIR__ . '/../../include/sms_helper.php';
-if (function_exists('check_hardware_offline_watchdog')) {
-    check_hardware_offline_watchdog(5);
+// 1. Fetch latest Sensor Data
+$sensor_data = [
+    'temperature' => '0.0',
+    'humidity'    => '0.0',
+    'water'       => 'off',
+    'date'        => date("Y-m-d"),
+    'time'        => date("h:i A")
+];
+
+try {
+    if (isset($conn) && $conn instanceof mysqli) {
+        $sensor_query = "SELECT temperature, humidity, water, date, time FROM sensor_data ORDER BY id DESC LIMIT 1";
+        $sensor_result = $conn->query($sensor_query);
+        if ($sensor_result && $sensor_result->num_rows > 0) {
+            $sensor_data = array_merge($sensor_data, $sensor_result->fetch_assoc());
+        }
+    }
+} catch (Throwable $e) {
+    // Graceful fallback to default values
 }
 
-// 2. Fetch latest Sensor Data
-$sensor_query = "SELECT temperature, humidity, water, date, time FROM sensor_data ORDER BY id DESC LIMIT 1";
-$sensor_result = $conn->query($sensor_query);
+// 2. Fetch Rules and Bypass Controls safely
+$settings_data = [
+    'temperature_on'    => '30.0',
+    'temperature_off'   => '26.0',
+    'humidity_on'       => '60.0',
+    'humidity_off'      => '75.0',
+    'heater_on'         => '20.0',
+    'fan_bypass'        => 'AUTO',
+    'exhaust_bypass'    => 'AUTO',
+    'water_pump_bypass' => 'AUTO',
+    'heater_bypass'     => 'AUTO'
+];
 
-if ($sensor_result && $sensor_result->num_rows > 0) {
-    $sensor_data = $sensor_result->fetch_assoc();
-} else {
-    $current_date = date("Y-m-d");
-    $current_time = date("h:i A");
-    $sensor_data = [
-        'temperature' => '0.0',
-        'humidity'    => '0.0',
-        'water'       => 'off',
-        'date'        => $current_date,
-        'time'        => $current_time
-    ];
+try {
+    if (isset($conn) && $conn instanceof mysqli) {
+        $settings_query = "SELECT * FROM settings_rule ORDER BY id DESC LIMIT 1";
+        $settings_result = $conn->query($settings_query);
+        if ($settings_result && $settings_result->num_rows > 0) {
+            $row = $settings_result->fetch_assoc();
+            $settings_data = array_merge($settings_data, $row);
+        }
+    }
+} catch (Throwable $e) {
+    // Graceful fallback to default rules
 }
 
-// 3. Fetch Rules and Bypass Controls directly from settings_rule
-$settings_query = "SELECT temperature_on, temperature_off, humidity_on, humidity_off, heater_on, fan_bypass, exhaust_bypass, water_pump_bypass, heater_bypass FROM settings_rule ORDER BY id DESC LIMIT 1";
-$settings_result = $conn->query($settings_query);
-
-if ($settings_result && $settings_result->num_rows > 0) {
-    $settings_data = $settings_result->fetch_assoc();
-} else {
-    $settings_data = [
-        'temperature_on'    => '30.0',
-        'temperature_off'   => '26.0',
-        'humidity_on'       => '60.0',
-        'humidity_off'      => '75.0',
-        'heater_on'         => '20.0',
-        'fan_bypass'        => 'AUTO',
-        'exhaust_bypass'    => 'AUTO',
-        'water_pump_bypass' => 'AUTO',
-        'heater_bypass'     => 'AUTO'
-    ];
-}
-
-$temp_val     = floatval($sensor_data['temperature']);
-$humidity_val = floatval($sensor_data['humidity']);
+$temp_val     = floatval($sensor_data['temperature'] ?? 0);
+$humidity_val = floatval($sensor_data['humidity'] ?? 0);
 
 $temp_on      = floatval($settings_data['temperature_on'] ?? 30.0);
 $temp_off     = floatval($settings_data['temperature_off'] ?? 26.0);
@@ -65,7 +68,7 @@ if (!function_exists('evalComponentState')) {
         $mode = strtoupper(trim((string)$bypass_mode));
         if ($mode === 'FORCE_ON') return true;
         if ($mode === 'FORCE_OFF') return false;
-        return (bool)$auto_state; // Defaults to AUTO mode rule
+        return (bool)$auto_state;
     }
 }
 
@@ -74,11 +77,11 @@ $is_exhaust_running = evalComponentState($settings_data['exhaust_bypass'] ?? 'AU
 $is_pump_running    = evalComponentState($settings_data['water_pump_bypass'] ?? 'AUTO', $auto_pump);
 
 echo json_encode([
-    'temperature'        => $sensor_data['temperature'],
-    'humidity'           => $sensor_data['humidity'],
-    'water'              => $sensor_data['water'],
-    'sensor_date'        => $sensor_data['date'],
-    'sensor_time'        => $sensor_data['time'],
+    'temperature'        => (string)($sensor_data['temperature'] ?? '0.0'),
+    'humidity'           => (string)($sensor_data['humidity'] ?? '0.0'),
+    'water'              => (string)($sensor_data['water'] ?? 'off'),
+    'sensor_date'        => (string)($sensor_data['date'] ?? date("Y-m-d")),
+    'sensor_time'        => (string)($sensor_data['time'] ?? date("h:i A")),
     'is_fan_running'     => $is_fan_running,
     'is_exhaust_running' => $is_exhaust_running,
     'is_pump_running'    => $is_pump_running,
@@ -86,9 +89,12 @@ echo json_encode([
     'temp_off'           => $temp_off,
     'humidity_on'        => $humidity_on,
     'humidity_off'       => $humidity_off,
-    'exhaust_bypass'     => $settings_data['exhaust_bypass'] ?? 'AUTO',
-    'water_pump_bypass'  => $settings_data['water_pump_bypass'] ?? 'AUTO'
+    'exhaust_bypass'     => (string)($settings_data['exhaust_bypass'] ?? 'AUTO'),
+    'water_pump_bypass'  => (string)($settings_data['water_pump_bypass'] ?? 'AUTO')
 ]);
 
-$conn->close();
+if (isset($conn) && $conn instanceof mysqli) {
+    $conn->close();
+}
+exit;
 ?>

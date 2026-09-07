@@ -28,14 +28,44 @@ if (!function_exists('get_sms_config')) {
             'cooldown_minutes' => 10,
             'last_warning_sent' => null,
             'last_critical_sent' => null,
-            'last_water_sent' => null
+            'last_water_sent' => null,
+            'last_sensor_received' => null,
+            'last_sensor_error_sent' => null,
+            'last_offline_sent' => null
         ];
 
         if (!$conn) return $default;
 
-        $res = $conn->query("SELECT * FROM sms_alerts_config WHERE id = 1 LIMIT 1");
-        if ($res && $res->num_rows > 0) {
-            return array_merge($default, $res->fetch_assoc());
+        try {
+            // Auto-create table if missing on remote production database
+            $conn->query("CREATE TABLE IF NOT EXISTS `sms_alerts_config` (
+                `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                `phone_number` VARCHAR(255) DEFAULT '09535919032, 09055823856',
+                `api_key` VARCHAR(255) DEFAULT 'txb_Rh0dtjm5OI7bLCU0JrUH5i7Bil3OkCYq',
+                `device_id` VARCHAR(100) DEFAULT '6a9ce8c9ccb6c72709608e32',
+                `gateway` VARCHAR(50) DEFAULT 'TEXTBEE',
+                `sender_name` VARCHAR(100) DEFAULT NULL,
+                `is_enabled` TINYINT(1) DEFAULT 1,
+                `warning_temp` DECIMAL(4,1) DEFAULT 30.0,
+                `critical_temp` DECIMAL(4,1) DEFAULT 32.0,
+                `cooldown_minutes` INT(11) DEFAULT 10,
+                `last_warning_sent` DATETIME DEFAULT NULL,
+                `last_critical_sent` DATETIME DEFAULT NULL,
+                `last_water_sent` DATETIME DEFAULT NULL,
+                `last_sensor_received` DATETIME DEFAULT NULL,
+                `last_sensor_error_sent` DATETIME DEFAULT NULL,
+                `last_offline_sent` DATETIME DEFAULT NULL
+            )");
+
+            // Auto-insert default row if empty
+            $conn->query("INSERT IGNORE INTO `sms_alerts_config` (`id`, `phone_number`, `api_key`, `device_id`, `gateway`, `is_enabled`, `warning_temp`, `critical_temp`, `cooldown_minutes`) VALUES (1, '09535919032, 09055823856', 'txb_Rh0dtjm5OI7bLCU0JrUH5i7Bil3OkCYq', '6a9ce8c9ccb6c72709608e32', 'TEXTBEE', 1, 30.0, 32.0, 10)");
+
+            $res = $conn->query("SELECT * FROM sms_alerts_config WHERE id = 1 LIMIT 1");
+            if ($res && $res->num_rows > 0) {
+                return array_merge($default, $res->fetch_assoc());
+            }
+        } catch (Throwable $e) {
+            // Return defaults if database query fails
         }
 
         return $default;
@@ -158,12 +188,26 @@ if (!function_exists('send_textbee_sms')) {
 
         // Log SMS attempt in database
         if ($conn) {
-            $loggedNumbers = implode(', ', $displayNumbers);
-            $stmt = $conn->prepare("INSERT INTO sms_alerts_log (phone_number, message, alert_type, status, response) VALUES (?, ?, ?, ?, ?)");
-            if ($stmt) {
-                $stmt->bind_param("sssss", $loggedNumbers, $message, $alertType, $statusStr, $responseStr);
-                $stmt->execute();
-                $stmt->close();
+            try {
+                $conn->query("CREATE TABLE IF NOT EXISTS `sms_alerts_log` (
+                    `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    `phone_number` VARCHAR(255) DEFAULT NULL,
+                    `message` TEXT DEFAULT NULL,
+                    `alert_type` VARCHAR(50) DEFAULT NULL,
+                    `status` VARCHAR(50) DEFAULT NULL,
+                    `response` TEXT DEFAULT NULL,
+                    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )");
+
+                $loggedNumbers = implode(', ', $displayNumbers);
+                $stmt = $conn->prepare("INSERT INTO sms_alerts_log (phone_number, message, alert_type, status, response) VALUES (?, ?, ?, ?, ?)");
+                if ($stmt) {
+                    $stmt->bind_param("sssss", $loggedNumbers, $message, $alertType, $statusStr, $responseStr);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            } catch (Throwable $e) {
+                // Ignore DB logging failure on remote hosts
             }
         }
 
@@ -288,7 +332,9 @@ if (!function_exists('check_and_trigger_sms_alerts')) {
                 $msg = "SWINEGUARD CRITICAL ALERT: Pen 1 temperature reached " . number_format($temp, 1) . "°C! Possible heat stress. Urgent cooling is active.";
                 send_sms($phone, $msg, 'CRITICAL_TEMP');
                 if ($conn) {
-                    $conn->query("UPDATE sms_alerts_config SET last_critical_sent = NOW() WHERE id = 1");
+                    try {
+                        $conn->query("UPDATE sms_alerts_config SET last_critical_sent = NOW() WHERE id = 1");
+                    } catch (Throwable $e) {}
                 }
             }
         }
@@ -299,7 +345,9 @@ if (!function_exists('check_and_trigger_sms_alerts')) {
                 $msg = "SWINEGUARD ALERT: High temperature detected in Pen 1 (" . number_format($temp, 1) . "°C). Automated cooling fan system is active.";
                 send_sms($phone, $msg, 'HIGH_TEMP_WARNING');
                 if ($conn) {
-                    $conn->query("UPDATE sms_alerts_config SET last_warning_sent = NOW() WHERE id = 1");
+                    try {
+                        $conn->query("UPDATE sms_alerts_config SET last_warning_sent = NOW() WHERE id = 1");
+                    } catch (Throwable $e) {}
                 }
             }
         }
@@ -311,7 +359,9 @@ if (!function_exists('check_and_trigger_sms_alerts')) {
                 $msg = "SWINEGUARD ALERT: Critical water level detected in Pen 1! Float switch is active.";
                 send_sms($phone, $msg, 'WATER_CRITICAL');
                 if ($conn) {
-                    $conn->query("UPDATE sms_alerts_config SET last_water_sent = NOW() WHERE id = 1");
+                    try {
+                        $conn->query("UPDATE sms_alerts_config SET last_water_sent = NOW() WHERE id = 1");
+                    } catch (Throwable $e) {}
                 }
             }
         }
@@ -346,7 +396,9 @@ if (!function_exists('check_and_trigger_sensor_malfunction_alert')) {
             $msg = "SWINEGUARD ALERT: Temperature sensor malfunction or disconnected in Pen 1! Emergency fallback mode is active.";
             send_sms($phone, $msg, 'SENSOR_MALFUNCTION');
             if ($conn) {
-                $conn->query("UPDATE sms_alerts_config SET last_sensor_error_sent = NOW() WHERE id = 1");
+                try {
+                    $conn->query("UPDATE sms_alerts_config SET last_sensor_error_sent = NOW() WHERE id = 1");
+                } catch (Throwable $e) {}
             }
         }
     }
@@ -377,13 +429,15 @@ if (!function_exists('check_hardware_offline_watchdog')) {
 
         // Fallback: check latest row in sensor_data if column timestamp is empty
         if (!$lastReceivedTime && $conn) {
-            $latestRes = $conn->query("SELECT date, time FROM sensor_data ORDER BY id DESC LIMIT 1");
-            if ($latestRes && ($row = $latestRes->fetch_assoc())) {
-                $timeStr = trim(($row['date'] ?? '') . ' ' . ($row['time'] ?? ''));
-                if (!empty($timeStr)) {
-                    $lastReceivedTime = strtotime($timeStr);
+            try {
+                $latestRes = $conn->query("SELECT date, time FROM sensor_data ORDER BY id DESC LIMIT 1");
+                if ($latestRes && ($row = $latestRes->fetch_assoc())) {
+                    $timeStr = trim(($row['date'] ?? '') . ' ' . ($row['time'] ?? ''));
+                    if (!empty($timeStr)) {
+                        $lastReceivedTime = strtotime($timeStr);
+                    }
                 }
-            }
+            } catch (Throwable $e) {}
         }
 
         if (!$lastReceivedTime) {
@@ -403,7 +457,9 @@ if (!function_exists('check_hardware_offline_watchdog')) {
                 $msg = "SWINEGUARD ALERT: Hardware offline or power lost in Pen 1! No sensor signal received. System watchdog is active.";
                 send_sms($config['phone_number'], $msg, 'HARDWARE_OFFLINE');
                 if ($conn) {
-                    $conn->query("UPDATE sms_alerts_config SET last_offline_sent = NOW() WHERE id = 1");
+                    try {
+                        $conn->query("UPDATE sms_alerts_config SET last_offline_sent = NOW() WHERE id = 1");
+                    } catch (Throwable $e) {}
                 }
             }
         }
