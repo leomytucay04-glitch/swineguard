@@ -308,52 +308,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                         </div>
                     </div>
 
-                    <!-- Heating Lamp Rule Card -->
-                    <div class="settings-card">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="config-icon bg-heater-light me-3">
-                                <i class="fa-solid fa-fire-flame-curved"></i>
-                            </div>
-                            <div>
-                                <h3 class="fw-bold m-0 fs-3">Heating Control Threshold</h3>
-                                <p class="text-muted fs-5 m-0">Turn ON heating light when temperature drops below or reaches threshold</p>
-                            </div>
-                        </div>
-
-                        <div class="row g-4 align-items-center">
-                            <div class="col-md-8">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label fs-5 fw-bold text-secondary">Turn ON Heater if Temperature is Below or Equal (≤)</label>
-                                        <div class="input-group input-group-lg">
-                                            <input type="number" step="0.1" class="form-control" name="heater_trigger_temp" id="heater_trigger_temp" value="<?php echo htmlspecialchars($heater_on); ?>" placeholder="e.g. 20.0" required>
-                                            <span class="input-group-text bg-white text-muted fs-4">°C</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="live-inline-card">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="live-icon-heater">
-                                                <i class="fa-solid fa-temperature-arrow-up"></i>
-                                            </div>
-                                            <div>
-                                                <div class="text-secondary fs-6 fw-bold">Heating Temp</div>
-                                                <h2 class="fw-bold m-0 text-dark display-6" id="live_heater_temp">--.-°C</h2>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="text-success fs-5 fw-bold d-flex align-items-center gap-2 mt-2">
-                                        <i class="fa-solid fa-circle-check"></i> <span id="heater_status">Standby</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Manual Bypass / Malfunction Override Controls Card -->
                     <div class="settings-card border-warning">
                         <div class="d-flex align-items-center mb-4">
@@ -394,14 +348,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
-                                <label class="form-label fs-5 fw-bold text-secondary">Heater Lamp Mode</label>
-                                <select class="form-select form-select-lg" name="heater_bypass">
-                                    <option value="AUTO" <?php echo ($heater_bypass == 'AUTO') ? 'selected' : ''; ?>>AUTO (Use Sensor)</option>
-                                    <option value="FORCE_ON" <?php echo ($heater_bypass == 'FORCE_ON') ? 'selected' : ''; ?>>FORCE ON (Always ON)</option>
-                                    <option value="FORCE_OFF" <?php echo ($heater_bypass == 'FORCE_OFF') ? 'selected' : ''; ?>>FORCE OFF (Always OFF)</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -432,13 +378,9 @@ if ($get_rules && $get_rules->num_rows > 0) {
                         $('#live_temp').text(data.temperature + '°C');
                         $('#live_humid').text(data.humidity + '%');
 
-                        // Update heating card to show live temperature
-                        $('#live_heater_temp').text(data.temperature + '°C');
-
                         // Status badges
                         $('#temp_status').text(data.temp_status || 'Optimal');
                         $('#humid_status').text(data.humid_status || 'Normal');
-                        $('#heater_status').text(data.heater_status || 'Active');
 
                         if (data.timestamp) {
                             lastSensorTimestamp = new Date(data.timestamp);
@@ -451,7 +393,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                     } else {
                         $('#live_temp').text('N/A');
                         $('#live_humid').text('N/A');
-                        $('#live_heater_temp').text('N/A');
                         $('.last-updated-text').text('No sensor data found');
                     }
                 },
@@ -500,7 +441,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                 var fanOff = parseFloat($("input[name='fan_stop_temp']").val());
                 var pumpOn = parseFloat($("input[name='pump_trigger_humidity']").val());
                 var pumpOff = parseFloat($("input[name='pump_stop_humidity']").val());
-                var heaterOn = parseFloat($("input[name='heater_trigger_temp']").val());
 
                 if (fanOn <= fanOff) {
                     Swal.fire({
@@ -517,17 +457,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                     Swal.fire({
                         title: "Confusing Pump Logic Detected",
                         html: `<span class="fs-5">Your <b>Turn ON</b> threshold (<b>${pumpOn}%</b>) must be lower than your <b>Maximum Target</b> (<b>${pumpOff}%</b>).</span>`,
-                        icon: "warning",
-                        confirmButtonColor: "#10b981",
-                        confirmButtonText: "Fix Thresholds"
-                    });
-                    return;
-                }
-
-                if (heaterOn >= fanOff) {
-                    Swal.fire({
-                        title: "Temperature Conflict Detected",
-                        html: `<span class="fs-5">Your <b>Heater ON</b> threshold (<b>${heaterOn}°C</b>) must be lower than your <b>Fan Cut-off</b> target (<b>${fanOff}°C</b>) to avoid running heating and cooling at the same time.</span>`,
                         icon: "warning",
                         confirmButtonColor: "#10b981",
                         confirmButtonText: "Fix Thresholds"

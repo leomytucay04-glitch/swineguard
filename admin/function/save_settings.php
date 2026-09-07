@@ -7,7 +7,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $temp_off  = isset($_POST['fan_stop_temp']) ? mysqli_real_escape_string($conn, $_POST['fan_stop_temp']) : '';
     $humid_on  = isset($_POST['pump_trigger_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_trigger_humidity']) : '';
     $humid_off = isset($_POST['pump_stop_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_stop_humidity']) : '';
-    $heater_on = isset($_POST['heater_trigger_temp']) ? mysqli_real_escape_string($conn, $_POST['heater_trigger_temp']) : '';
+    // Preserve existing heater_on if not provided in POST
+    if (isset($_POST['heater_trigger_temp']) && $_POST['heater_trigger_temp'] !== '') {
+        $heater_on = mysqli_real_escape_string($conn, $_POST['heater_trigger_temp']);
+    } else {
+        $curr_heater = $conn->query("SELECT heater_on FROM settings_rule WHERE id = 1");
+        if ($curr_heater && $curr_heater->num_rows > 0) {
+            $h_row = $curr_heater->fetch_assoc();
+            $heater_on = $h_row['heater_on'] ?? '20.0';
+        } else {
+            $heater_on = '20.0';
+        }
+    }
 
     // Collect and sanitize Bypass / Emergency controls
     $fan_bypass     = isset($_POST['fan_bypass']) ? mysqli_real_escape_string($conn, $_POST['fan_bypass']) : 'AUTO';

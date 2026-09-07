@@ -48,6 +48,7 @@ void handleBuzzer(bool waterCritical, bool fallbackMode) {
   unsigned long now = millis();
 
   if (waterCritical) {
+    // Fast pulsing beep (700ms) for critical water alert
     if (now - lastBuzzerToggle >= 700) {
       lastBuzzerToggle = now;
       buzzerState = !buzzerState;
@@ -55,8 +56,12 @@ void handleBuzzer(bool waterCritical, bool fallbackMode) {
     }
   } 
   else if (fallbackMode) {
-    digitalWrite(BUZZER_PIN, HIGH);
-    buzzerState = false;
+    // Pulsing beep (1200ms) for offline fallback mode alert
+    if (now - lastBuzzerToggle >= 1200) {
+      lastBuzzerToggle = now;
+      buzzerState = !buzzerState;
+      digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+    }
   } 
   else {
     digitalWrite(BUZZER_PIN, LOW);
@@ -67,13 +72,13 @@ void handleBuzzer(bool waterCritical, bool fallbackMode) {
 void runFallbackLogic(float temperature, float humidity) {
   if (!isnan(temperature)) {
     if (temperature >= FALLBACK_TEMP_ON) {
-      digitalWrite(COOLING_FAN_PIN, RELAY_OFF);
-      digitalWrite(EXHAUST_FAN_PIN, RELAY_OFF);
+      digitalWrite(COOLING_FAN_PIN, RELAY_ON);
+      digitalWrite(EXHAUST_FAN_PIN, RELAY_ON);
       currentCoolingStatus = "on";
       currentExhaustStatus = "on";
     } else if (temperature <= FALLBACK_TEMP_OFF) {
-      digitalWrite(COOLING_FAN_PIN, RELAY_ON);
-      digitalWrite(EXHAUST_FAN_PIN, RELAY_ON);
+      digitalWrite(COOLING_FAN_PIN, RELAY_OFF);
+      digitalWrite(EXHAUST_FAN_PIN, RELAY_OFF);
       currentCoolingStatus = "off";
       currentExhaustStatus = "off";
     }
@@ -136,6 +141,7 @@ void loop() {
   unsigned long now = millis();
 
   if (now - lastSendTime >= sendInterval) {
+    lastSendTime = now;
 
     float temperature = dht.readTemperature();
     float humidity    = dht.readHumidity();

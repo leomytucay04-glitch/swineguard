@@ -17,7 +17,7 @@ if (!function_exists('online')) {
         // Hostinger Database Configuration
         $GLOBALS['dbservername'] = "localhost";
         $GLOBALS['dbusername']   = "u793614128_user_pig";
-        $GLOBALS['dbpassword']   = "YOUR_HOSTINGER_DB_PASSWORD"; // <-- REPLACE WITH YOUR HOSTINGER DB PASSWORD
+        $GLOBALS['dbpassword']   = "@Swine2026";
         $GLOBALS['dbname']       = "u793614128_pig";
     }
 }
@@ -29,7 +29,7 @@ if (!isset($conn) || !($conn instanceof mysqli) || @mysqli_ping($conn) === false
     } else {
         // Automatic environment detection (swinemonitoring.site vs localhost)
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+        if (empty($host) || php_sapi_name() === 'cli' || strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
             localhost();
         } else {
             online();

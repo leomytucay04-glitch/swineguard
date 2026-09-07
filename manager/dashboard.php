@@ -1,6 +1,5 @@
 <?php
 include "out.php";
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -183,8 +182,8 @@ include "out.php";
                     </div>
                     <p class="text-secondary card-label fw-medium mb-1">Temperature</p>
                     <h3 class="fw-bold mb-1 text-dark" id="live-temp">--°C</h3>
-                    <div class="text-success card-subtext fw-medium">
-                        <i class="fa-solid fa-circle-check me-1"></i> Optimal range
+                    <div class="card-subtext fw-medium" id="temp-subtext">
+                        <i class="fa-solid fa-circle-check me-1"></i> Checking...
                     </div>
                     <div class="text-muted card-subtext mt-1">
                         <i class="fa-regular fa-clock me-1"></i> <span id="temp-last-updated">Awaiting updates...</span>
@@ -202,8 +201,8 @@ include "out.php";
                     </div>
                     <p class="text-secondary card-label fw-medium mb-1">Relative Humidity</p>
                     <h3 class="fw-bold mb-1 text-dark" id="live-humidity">--%</h3>
-                    <div class="text-success card-subtext fw-medium">
-                        <i class="fa-solid fa-circle-check me-1"></i> Normal thresholds
+                    <div class="card-subtext fw-medium" id="humidity-subtext">
+                        <i class="fa-solid fa-circle-check me-1"></i> Checking...
                     </div>
                     <div class="text-muted card-subtext mt-1">
                         <i class="fa-regular fa-clock me-1"></i> <span id="humidity-last-updated">Awaiting updates...</span>
@@ -411,7 +410,6 @@ include "out.php";
                 }
             }
 
-            // Function 1: Updates Real-time Summary Cards
             function updateDashboard() {
                 $.ajax({
                     url: 'function/get_live_data.php',
@@ -420,13 +418,45 @@ include "out.php";
                     success: function(data) {
                         if (data.error) return;
 
-                        // Update core sensor metrics
+                        const temp = parseFloat(data.temperature) || 0;
+                        const humidity = parseFloat(data.humidity) || 0;
+
+                        // 1. Core Sensor Values
                         $('#live-temp').text(data.temperature + '°C');
                         $('#live-humidity').text(data.humidity + '%');
 
-                        // Water Level State Handling
-                        const waterVal = data.water ? data.water.toString().toLowerCase() : 'off';
+                        // 2. Temperature Ranges (from settings_rule)
+                        if (temp >= data.temp_on) {
+                            $('#temp-subtext')
+                                .attr('class', 'text-danger card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-triangle-exclamation me-1"></i> High (Above ' + data.temp_on + '°C)');
+                        } else if (temp <= data.temp_off) {
+                            $('#temp-subtext')
+                                .attr('class', 'text-warning card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-temperature-arrow-down me-1"></i> Low (Below ' + data.temp_off + '°C)');
+                        } else {
+                            $('#temp-subtext')
+                                .attr('class', 'text-success card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-circle-check me-1"></i> Optimal range (' + data.temp_off + ' - ' + data.temp_on + '°C)');
+                        }
 
+                        // 3. Humidity Ranges (from settings_rule)
+                        if (humidity < data.humidity_on) {
+                            $('#humidity-subtext')
+                                .attr('class', 'text-warning card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-droplet-slash me-1"></i> Low (Below ' + data.humidity_on + '%)');
+                        } else if (humidity > data.humidity_off) {
+                            $('#humidity-subtext')
+                                .attr('class', 'text-danger card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-triangle-exclamation me-1"></i> High (Above ' + data.humidity_off + '%)');
+                        } else {
+                            $('#humidity-subtext')
+                                .attr('class', 'text-success card-subtext fw-medium')
+                                .html('<i class="fa-solid fa-circle-check me-1"></i> Normal range (' + data.humidity_on + ' - ' + data.humidity_off + '%)');
+                        }
+
+                        // 4. Water Level Indicator
+                        const waterVal = data.water ? data.water.toString().toLowerCase() : 'off';
                         if (['on', 'active', 'normal', 'high'].includes(waterVal)) {
                             $('#live-water').text('NORMAL');
                             $('#water-badge')
@@ -443,14 +473,14 @@ include "out.php";
                             $('#water-subtext').html('<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Supply low</span>');
                         }
 
-                        // Timestamps
+                        // 5. Timestamps
                         const timeAgoText = formatTimeAgo(data.sensor_date, data.sensor_time);
                         $('#temp-last-updated').text(timeAgoText);
                         $('#humidity-last-updated').text(timeAgoText);
                         $('#water-last-updated').text(timeAgoText);
 
-                        // Exhaust Fan UI
-                        if (data.exhaust === 'on' || data.exhaust === 'active' || data.fan === 'on') {
+                        // 6. Fan / Exhaust UI State (Evaluated via settings_rule threshold)
+                        if (data.is_fan_running || data.is_exhaust_running) {
                             $('#fan-badge').text('ACTIVE').removeClass('status-idle').addClass('status-active');
                             $('#fan-text').text('Running');
                             $('#fan-icon').addClass('spin-slow');
@@ -460,8 +490,8 @@ include "out.php";
                             $('#fan-icon').removeClass('spin-slow');
                         }
 
-                        // Water Pump UI
-                        if (data.water_pump === 'on' || data.water_pump === 'active') {
+                        // 7. Water Pump UI State (Evaluated via settings_rule threshold)
+                        if (data.is_pump_running) {
                             $('#pump-badge').text('ACTIVE').removeClass('status-idle').addClass('status-active');
                             $('#pump-text').text('Running');
                         } else {
@@ -469,8 +499,10 @@ include "out.php";
                             $('#pump-text').text('Standby');
                         }
 
-                        // Run Stale Data Check (Triggers modal if telemetry date/time exceeds 5 mins)
-                        checkStaleData(data.sensor_date, data.sensor_time);
+                        // Stale check execution
+                        if (typeof checkStaleData === 'function') {
+                            checkStaleData(data.sensor_date, data.sensor_time);
+                        }
                     },
                     complete: function() {
                         setTimeout(updateDashboard, 1000);

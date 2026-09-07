@@ -4,10 +4,6 @@ include "out.php";
 <?php
 // Establish connection to database
 include "../include/dbcon.php";
-include_once "../include/sms_helper.php";
-
-// Fetch existing SMS alert configuration
-$sms_config = get_sms_config();
 
 // Fetch existing rule thresholds & bypass modes
 $temp_on = $temp_off = $humid_on = $humid_off = $heater_on = "";
@@ -175,18 +171,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
             justify-content: center;
             font-size: 1.4rem;
         }
-
-        .bg-sms-light {
-            background-color: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .sms-status-card {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 20px 24px;
-        }
     </style>
 </head>
 
@@ -324,52 +308,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                         </div>
                     </div>
 
-                    <!-- Heating Lamp Rule Card -->
-                    <div class="settings-card">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="config-icon bg-heater-light me-3">
-                                <i class="fa-solid fa-fire-flame-curved"></i>
-                            </div>
-                            <div>
-                                <h3 class="fw-bold m-0 fs-3">Heating Control Threshold</h3>
-                                <p class="text-muted fs-5 m-0">Turn ON heating light when temperature drops below or reaches threshold</p>
-                            </div>
-                        </div>
-
-                        <div class="row g-4 align-items-center">
-                            <div class="col-md-8">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label fs-5 fw-bold text-secondary">Turn ON Heater if Temperature is Below or Equal (≤)</label>
-                                        <div class="input-group input-group-lg">
-                                            <input type="number" step="0.1" class="form-control" name="heater_trigger_temp" id="heater_trigger_temp" value="<?php echo htmlspecialchars($heater_on); ?>" placeholder="e.g. 20.0" required>
-                                            <span class="input-group-text bg-white text-muted fs-4">°C</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="live-inline-card">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="live-icon-heater">
-                                                <i class="fa-solid fa-temperature-arrow-up"></i>
-                                            </div>
-                                            <div>
-                                                <div class="text-secondary fs-6 fw-bold">Heating Temp</div>
-                                                <h2 class="fw-bold m-0 text-dark display-6" id="live_heater_temp">--.-°C</h2>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="text-success fs-5 fw-bold d-flex align-items-center gap-2 mt-2">
-                                        <i class="fa-solid fa-circle-check"></i> <span id="heater_status">Standby</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Manual Bypass / Malfunction Override Controls Card -->
                     <div class="settings-card border-warning">
                         <div class="d-flex align-items-center mb-4">
@@ -410,127 +348,13 @@ if ($get_rules && $get_rules->num_rows > 0) {
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
-                                <label class="form-label fs-5 fw-bold text-secondary">Heater Lamp Mode</label>
-                                <select class="form-select form-select-lg" name="heater_bypass">
-                                    <option value="AUTO" <?php echo ($heater_bypass == 'AUTO') ? 'selected' : ''; ?>>AUTO (Use Sensor)</option>
-                                    <option value="FORCE_ON" <?php echo ($heater_bypass == 'FORCE_ON') ? 'selected' : ''; ?>>FORCE ON (Always ON)</option>
-                                    <option value="FORCE_OFF" <?php echo ($heater_bypass == 'FORCE_OFF') ? 'selected' : ''; ?>>FORCE OFF (Always OFF)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SMS Alert Notifications Card (Semaphore Gateway) -->
-                    <div class="settings-card">
-                        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-                            <div class="d-flex align-items-center">
-                                <div class="config-icon bg-sms-light me-3">
-                                    <i class="fa-solid fa-comment-sms"></i>
-                                </div>
-                                <div>
-                                    <h3 class="fw-bold m-0 fs-3">SMS Alert Notifications (Semaphore)</h3>
-                                    <p class="text-muted fs-5 m-0">Send automated SMS text alerts to mobile phone during heat stress or critical water levels</p>
-                                </div>
-                            </div>
-                            <div class="form-check form-switch fs-4">
-                                <input class="form-check-input" type="checkbox" role="switch" id="sms_enabled" name="sms_enabled" value="1" <?php echo (!empty($sms_config['is_enabled'])) ? 'checked' : ''; ?>>
-                                <label class="form-check-label fw-bold text-secondary" for="sms_enabled">Enable SMS Alerts</label>
-                            </div>
-                        </div>
-
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label fs-5 fw-bold text-secondary">
-                                    <i class="fa-solid fa-mobile-screen me-1 text-primary"></i> Recipient Mobile Number (PH)
-                                </label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text bg-white text-muted fs-5 fw-bold">+63 / 0</span>
-                                    <input type="text" class="form-control" name="sms_phone_number" id="sms_phone_number" 
-                                           value="<?php echo htmlspecialchars($sms_config['phone_number'] ?? ''); ?>" 
-                                           placeholder="e.g. 09171234567">
-                                </div>
-                                <div class="form-text fs-6 text-muted mt-1">Accepts Smart, Globe, DITO, TNT, or TM numbers (11 digits).</div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fs-5 fw-bold text-secondary">
-                                    <i class="fa-solid fa-key me-1 text-warning"></i> Semaphore API Key
-                                </label>
-                                <div class="input-group input-group-lg">
-                                    <input type="text" class="form-control font-monospace" name="sms_api_key" id="sms_api_key" 
-                                           value="<?php echo htmlspecialchars($sms_config['api_key'] ?? '730ab64ad28cb82ace198506beec6218'); ?>" 
-                                           placeholder="Enter Semaphore API Key">
-                                </div>
-                                <div class="form-text fs-6 text-muted mt-1">Designated for the Philippines. Register at <a href="https://semaphore.co" target="_blank" class="text-decoration-none fw-bold text-primary">semaphore.co</a> for trial credits.</div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label fs-5 fw-bold text-secondary">High Temp Warning (≥)</label>
-                                <div class="input-group input-group-lg">
-                                    <input type="number" step="0.1" class="form-control" name="sms_warning_temp" 
-                                           value="<?php echo htmlspecialchars($sms_config['warning_temp'] ?? 30.0); ?>" placeholder="30.0">
-                                    <span class="input-group-text bg-white text-muted fs-4">°C</span>
-                                </div>
-                                <div class="form-text fs-6 text-muted mt-1">Triggers cautionary warning SMS</div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label fs-5 fw-bold text-secondary">Critical Heat Stress (≥)</label>
-                                <div class="input-group input-group-lg">
-                                    <input type="number" step="0.1" class="form-control" name="sms_critical_temp" 
-                                           value="<?php echo htmlspecialchars($sms_config['critical_temp'] ?? 32.0); ?>" placeholder="32.0">
-                                    <span class="input-group-text bg-white text-muted fs-4">°C</span>
-                                </div>
-                                <div class="form-text fs-6 text-muted mt-1">Triggers urgent heat stress emergency SMS</div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label fs-5 fw-bold text-secondary">Anti-Spam Cooldown</label>
-                                <div class="input-group input-group-lg">
-                                    <input type="number" min="1" max="120" class="form-control" name="sms_cooldown_minutes" 
-                                           value="<?php echo htmlspecialchars($sms_config['cooldown_minutes'] ?? 10); ?>" placeholder="10">
-                                    <span class="input-group-text bg-white text-muted fs-4">mins</span>
-                                </div>
-                                <div class="form-text fs-6 text-muted mt-1">Prevents SMS credit drain by waiting between alerts</div>
-                            </div>
-
-                            <!-- Live Semaphore Balance & Test SMS Action Bar -->
-                            <div class="col-12">
-                                <div class="sms-status-card d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="fs-2 text-primary">
-                                            <i class="fa-solid fa-tower-broadcast"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fs-5 fw-bold text-dark d-flex align-items-center gap-2">
-                                                Semaphore Gateway Status:
-                                                <span id="semaphore_status_badge" class="badge bg-secondary fs-6">Checking...</span>
-                                            </div>
-                                            <div class="fs-6 text-muted">
-                                                SMS Credit Balance: <strong id="semaphore_credits_badge" class="text-dark">--</strong> credits
-                                                <span class="mx-2">•</span>
-                                                Water Float Sensor: <span class="text-success fw-bold">Monitored</span> (Auto SMS on Critical Level)
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="button" id="btnRefreshSmsStatus" class="btn btn-outline-secondary fs-5 px-3 py-2">
-                                            <i class="fa-solid fa-rotate me-1"></i> Refresh Status
-                                        </button>
-                                        <button type="button" id="btnSendTestSms" class="btn btn-warning text-dark fw-bold fs-5 px-4 py-2">
-                                            <i class="fa-solid fa-paper-plane me-1"></i> Send Test SMS
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     <!-- Save Action Button -->
                     <div class="d-flex justify-content-end mb-5">
                         <button type="submit" class="btn btn-primary shadow px-5 py-3 fs-4">
-                            <i class="fa-solid fa-floppy-disk me-2"></i> Save Automation Rules & SMS Settings
+                            <i class="fa-solid fa-floppy-disk me-2"></i> Save Automation Rules
                         </button>
                     </div>
 
@@ -554,13 +378,9 @@ if ($get_rules && $get_rules->num_rows > 0) {
                         $('#live_temp').text(data.temperature + '°C');
                         $('#live_humid').text(data.humidity + '%');
 
-                        // Update heating card to show live temperature
-                        $('#live_heater_temp').text(data.temperature + '°C');
-
                         // Status badges
                         $('#temp_status').text(data.temp_status || 'Optimal');
                         $('#humid_status').text(data.humid_status || 'Normal');
-                        $('#heater_status').text(data.heater_status || 'Active');
 
                         if (data.timestamp) {
                             lastSensorTimestamp = new Date(data.timestamp);
@@ -573,7 +393,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                     } else {
                         $('#live_temp').text('N/A');
                         $('#live_humid').text('N/A');
-                        $('#live_heater_temp').text('N/A');
                         $('.last-updated-text').text('No sensor data found');
                     }
                 },
@@ -622,7 +441,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                 var fanOff = parseFloat($("input[name='fan_stop_temp']").val());
                 var pumpOn = parseFloat($("input[name='pump_trigger_humidity']").val());
                 var pumpOff = parseFloat($("input[name='pump_stop_humidity']").val());
-                var heaterOn = parseFloat($("input[name='heater_trigger_temp']").val());
 
                 if (fanOn <= fanOff) {
                     Swal.fire({
@@ -639,17 +457,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                     Swal.fire({
                         title: "Confusing Pump Logic Detected",
                         html: `<span class="fs-5">Your <b>Turn ON</b> threshold (<b>${pumpOn}%</b>) must be lower than your <b>Maximum Target</b> (<b>${pumpOff}%</b>).</span>`,
-                        icon: "warning",
-                        confirmButtonColor: "#10b981",
-                        confirmButtonText: "Fix Thresholds"
-                    });
-                    return;
-                }
-
-                if (heaterOn >= fanOff) {
-                    Swal.fire({
-                        title: "Temperature Conflict Detected",
-                        html: `<span class="fs-5">Your <b>Heater ON</b> threshold (<b>${heaterOn}°C</b>) must be lower than your <b>Fan Cut-off</b> target (<b>${fanOff}°C</b>) to avoid running heating and cooling at the same time.</span>`,
                         icon: "warning",
                         confirmButtonColor: "#10b981",
                         confirmButtonText: "Fix Thresholds"
@@ -695,135 +502,6 @@ if ($get_rules && $get_rules->num_rows > 0) {
                             icon: "error",
                             confirmButtonColor: "#ef4444",
                             confirmButtonText: "Close"
-                        });
-                    }
-                });
-            // Check Semaphore Account Status and Credits
-            function checkSemaphoreStatus() {
-                var apiKey = $('#sms_api_key').val().trim();
-                if (!apiKey) {
-                    $('#semaphore_status_badge').removeClass().addClass('badge bg-secondary fs-6').text('No Key');
-                    $('#semaphore_credits_badge').text('0');
-                    return;
-                }
-
-                $('#semaphore_status_badge').removeClass().addClass('badge bg-secondary fs-6').text('Checking...');
-                $.ajax({
-                    url: 'function/get_sms_status.php',
-                    type: 'GET',
-                    data: { api_key: apiKey },
-                    dataType: 'json',
-                    success: function(res) {
-                        if (res && res.success) {
-                            var status = (res.status || 'Active').toUpperCase();
-                            var badgeClass = 'bg-success';
-                            if (status === 'PENDING') {
-                                badgeClass = 'bg-warning text-dark';
-                            } else if (status === 'INACTIVE' || status === 'BLOCKED') {
-                                badgeClass = 'bg-danger';
-                            }
-                            $('#semaphore_status_badge').removeClass().addClass('badge ' + badgeClass + ' fs-6').text(status);
-                            $('#semaphore_credits_badge').text(res.credit_balance !== undefined ? res.credit_balance : 0);
-                        } else {
-                            $('#semaphore_status_badge').removeClass().addClass('badge bg-danger fs-6').text('Connection Error');
-                        }
-                    },
-                    error: function() {
-                        $('#semaphore_status_badge').removeClass().addClass('badge bg-danger fs-6').text('Offline');
-                    }
-                });
-            }
-
-            checkSemaphoreStatus();
-
-            $('#btnRefreshSmsStatus').on('click', function() {
-                checkSemaphoreStatus();
-            });
-
-            // Send Test SMS
-            $('#btnSendTestSms').on('click', function() {
-                var phone = $('#sms_phone_number').val().trim();
-                var apiKey = $('#sms_api_key').val().trim();
-
-                if (!phone) {
-                    Swal.fire({
-                        title: "Phone Number Required",
-                        text: "Please enter a valid Philippine mobile number (e.g., 09171234567) before sending a test SMS.",
-                        icon: "warning",
-                        confirmButtonColor: "#10b981"
-                    });
-                    $('#sms_phone_number').focus();
-                    return;
-                }
-
-                if (!apiKey) {
-                    Swal.fire({
-                        title: "API Key Required",
-                        text: "Please provide your Semaphore API Key.",
-                        icon: "warning",
-                        confirmButtonColor: "#10b981"
-                    });
-                    return;
-                }
-
-                Swal.fire({
-                    title: "Sending Test SMS...",
-                    html: `Dispatching test message to <b>${phone}</b> via Semaphore Gateway...`,
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                $.ajax({
-                    url: "function/send_test_sms.php",
-                    type: "POST",
-                    data: {
-                        phone_number: phone,
-                        api_key: apiKey
-                    },
-                    dataType: "json",
-                    success: function(res) {
-                        checkSemaphoreStatus();
-                        if (res && res.success) {
-                            Swal.fire({
-                                title: "SMS Sent Successfully!",
-                                html: `<div class="text-start fs-5">
-                                    <p>Your test message has been queued by Semaphore and sent to <b>${phone}</b>.</p>
-                                    <p class="text-muted fs-6 mb-0">Remaining credits: <b>${res.credit_balance}</b></p>
-                                </div>`,
-                                icon: "success",
-                                confirmButtonColor: "#10b981"
-                            });
-                        } else {
-                            var extraInfo = '';
-                            if (res.status === 'ACCOUNT_PENDING' || res.account_status === 'Pending') {
-                                extraInfo = `<div class="alert alert-warning text-start fs-6 mt-3">
-                                    <strong>Semaphore Account Pending:</strong><br>
-                                    Semaphore provides free SMS credits upon verifying your mobile number on <a href="https://semaphore.co" target="_blank" class="fw-bold">semaphore.co</a>. Once verified, your status will become <b>Active</b> with free SMS credits.
-                                </div>`;
-                            } else if (res.status === 'INSUFFICIENT_CREDITS' || res.credit_balance === 0) {
-                                extraInfo = `<div class="alert alert-info text-start fs-6 mt-3">
-                                    <strong>Zero Balance:</strong> Please verify your phone number on Semaphore.co to receive your free testing credits.
-                                </div>`;
-                            }
-                            Swal.fire({
-                                title: "SMS Test Response",
-                                html: `<div class="text-start fs-5">
-                                    <p>${res.message || 'Unable to complete SMS dispatch.'}</p>
-                                    ${extraInfo}
-                                </div>`,
-                                icon: (res.status === 'ACCOUNT_PENDING' || res.account_status === 'Pending') ? "info" : "warning",
-                                confirmButtonColor: "#10b981"
-                            });
-                        }
-                    },
-                    error: function() {
-                        Swal.fire({
-                            title: "Network Error",
-                            text: "Failed to communicate with Semaphore SMS service endpoint.",
-                            icon: "error",
-                            confirmButtonColor: "#ef4444"
                         });
                     }
                 });
