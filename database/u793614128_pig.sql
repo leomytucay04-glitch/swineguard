@@ -2666,6 +2666,8 @@ CREATE TABLE `system_health` (
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
+  `first_name` varchar(150) DEFAULT NULL,
+  `last_name` varchar(150) DEFAULT NULL,
   `name` varchar(250) DEFAULT NULL,
   `username` varchar(250) DEFAULT NULL,
   `password` varchar(250) DEFAULT NULL,
@@ -2682,13 +2684,13 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `username`, `password`, `email`, `email_verified`, `verification_code`, `code_expires_at`, `role`, `status`, `created_at`) VALUES
-(1, 'Leomy T.', 'meng', '@22_Me!n', NULL, 0, NULL, NULL, 'manager', 'active', '2026-08-29 05:35:14'),
-(3, 'Mimiya', 'miyang19', '098765', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-02 16:16:00'),
-(4, 'Gemma', 'gemalouu', '@24_Gemm', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-02 16:16:43'),
-(5, 'Elma', 'elma', 'elma', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-04 05:23:25'),
-(7, 'Mael', 'mael', 'Man-i@1002', 'elmabitz123@gmail.com', 1, NULL, NULL, 'client', 'active', '2026-09-14 23:50:18'),
-(8, 'Rhea Ann Quilang', 'Rhea', '@An22_23', 'rheaquilang23@gmail.com', 1, NULL, NULL, 'client', 'active', '2026-09-15 06:22:55');
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `name`, `username`, `password`, `email`, `email_verified`, `verification_code`, `code_expires_at`, `role`, `status`, `created_at`) VALUES
+(1, 'Leomy', 'T.', 'Leomy T.', 'meng', '@22_Me!n', NULL, 0, NULL, NULL, 'manager', 'active', '2026-08-29 05:35:14'),
+(3, 'Mimiya', '', 'Mimiya', 'miyang19', '098765', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-02 16:16:00'),
+(4, 'Gemma', '', 'Gemma', 'gemalouu', '@24_Gemm', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-02 16:16:43'),
+(5, 'Elma', '', 'Elma', 'elma', 'elma', NULL, 0, NULL, NULL, 'client', 'active', '2026-09-04 05:23:25'),
+(7, 'Mael', '', 'Mael', 'mael', 'Man-i@1002', 'elmabitz123@gmail.com', 1, NULL, NULL, 'client', 'active', '2026-09-14 23:50:18'),
+(8, 'Rhea Ann', 'Quilang', 'Rhea Ann Quilang', 'Rhea', '@An22_23', 'rheaquilang23@gmail.com', 1, NULL, NULL, 'client', 'active', '2026-09-15 06:22:55');
 
 --
 -- Indexes for dumped tables

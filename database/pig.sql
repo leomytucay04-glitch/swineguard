@@ -556,6 +556,8 @@ INSERT INTO `settings_rule` (`id`, `temperature_on`, `temperature_off`, `humidit
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
+  `first_name` varchar(150) DEFAULT NULL,
+  `last_name` varchar(150) DEFAULT NULL,
   `name` varchar(250) DEFAULT NULL,
   `username` varchar(250) DEFAULT NULL,
   `password` varchar(250) DEFAULT NULL,
@@ -572,8 +574,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `username`, `password`, `email`, `email_verified`, `verification_code`, `code_expires_at`, `role`, `status`, `created_at`) VALUES
-(1, '1', '1', '1', NULL, 0, NULL, NULL, 'manager', 'active', '2026-08-22 08:30:31');
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `name`, `username`, `password`, `email`, `email_verified`, `verification_code`, `code_expires_at`, `role`, `status`, `created_at`) VALUES
+(1, '1', '', '1', '1', '1', NULL, 0, NULL, NULL, 'manager', 'active', '2026-08-22 08:30:31');
 
 --
 -- Indexes for dumped tables
