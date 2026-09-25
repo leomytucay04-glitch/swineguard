@@ -5,9 +5,17 @@ include_once __DIR__ . "/../../include/password_validator.php";
 
 $action = $_POST['action'] ?? $_GET['action'] ?? $_REQUEST['action'] ?? '';
 
+// Check if dedicated first_name column exists in users table
+$col_check = $conn->query("SHOW COLUMNS FROM users LIKE 'first_name'");
+$has_name_cols = ($col_check && $col_check->num_rows > 0);
+
 // --- 1. FETCH USERS ---
 if ($action === 'fetch') {
-    $query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
+    if ($has_name_cols) {
+        $query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
+    } else {
+        $query = "SELECT id, name, username, role, status, created_at FROM users ORDER BY id DESC";
+    }
     $result = mysqli_query($conn, $query);
 
     $users = [];
@@ -69,9 +77,14 @@ if ($action === 'add_user') {
     }
     $checkStmt->close();
 
-    // INSERT NEW USER
-    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, name, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssss", $first_name, $last_name, $name, $username, $password, $role, $status);
+    // INSERT NEW USER (Supports both schemas: with or without first_name/last_name columns)
+    if ($has_name_cols) {
+        $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, name, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $first_name, $last_name, $name, $username, $password, $role, $status);
+    } else {
+        $stmt = $conn->prepare("INSERT INTO users (name, username, password, role, status) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $name, $username, $password, $role, $status);
+    }
 
     if ($stmt->execute()) {
         $newId = $stmt->insert_id;
@@ -138,11 +151,21 @@ if ($action === 'edit_user') {
             exit;
         }
 
-        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("sssssssi", $first_name, $last_name, $name, $username, $password, $role, $status, $id);
+        if ($has_name_cols) {
+            $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->bind_param("sssssssi", $first_name, $last_name, $name, $username, $password, $role, $status, $id);
+        } else {
+            $stmt = $conn->prepare("UPDATE users SET name = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->bind_param("sssssi", $name, $username, $password, $role, $status, $id);
+        }
     } else {
-        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, role = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("ssssssi", $first_name, $last_name, $name, $username, $role, $status, $id);
+        if ($has_name_cols) {
+            $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->bind_param("ssssssi", $first_name, $last_name, $name, $username, $role, $status, $id);
+        } else {
+            $stmt = $conn->prepare("UPDATE users SET name = ?, username = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->bind_param("ssssi", $name, $username, $role, $status, $id);
+        }
     }
 
     if ($stmt->execute()) {

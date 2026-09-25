@@ -8,7 +8,16 @@ $init_total = 0;
 $init_managers = 0;
 $init_clients = 0;
 
-$u_query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
+// Check if dedicated first_name column exists in users table
+$col_check = $conn->query("SHOW COLUMNS FROM users LIKE 'first_name'");
+$has_name_cols = ($col_check && $col_check->num_rows > 0);
+
+if ($has_name_cols) {
+    $u_query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
+} else {
+    $u_query = "SELECT id, name, username, role, status, created_at FROM users ORDER BY id DESC";
+}
+
 $u_res = $conn->query($u_query);
 if ($u_res) {
     while ($row = $u_res->fetch_assoc()) {
