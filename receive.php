@@ -3,7 +3,7 @@
     // Include your database connection ($conn)
     include "include/dbcon.php";
 
-    // 1. Set the timezone to Philippines (Manila)
+    // 1. Set the timezone to Philippines (Manila)  
     date_default_timezone_set('Asia/Manila');
 
     // Check if data is coming from the ESP32 via POST

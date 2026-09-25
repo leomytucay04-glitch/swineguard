@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include "out.php";
 include "../include/dbcon.php";
 ?>
@@ -14,346 +14,108 @@ include "../include/dbcon.php";
     <link rel="stylesheet" href="../include/bootstrap.css">
     <link rel="stylesheet" href="../include/fontawesome-free-6.7.2-web/css/all.min.css">
     <link rel="stylesheet" href="../include/animate.min.css">
+    <link rel="stylesheet" href="../include/theme.css">
     <script src="../include/bootstrap.js"></script>
     <script src="../include/sweetalert.js"></script>
     <script src="../include/popper.js"></script>
     <script src="../include/chart.js"></script>
     <script src="../include/jquery.js"></script>
 
-    <style>
-        :root {
-            --primary-color: #10b981;
-            --dark-color: #0f172a;
-            --bg-color: #f8fafc;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: #334155;
-            min-height: 100vh;
-        }
-
-        .metric-card,
-        .log-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-            border: 1px solid #e2e8f0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .metric-card {
-            height: 100%;
-            padding: 16px 14px;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-        }
-
-        .icon-shape {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            margin-bottom: 16px;
-        }
-
-        .icon-users {
-            background-color: #fef3c7;
-            color: #d97706;
-        }
-
-        .icon-manager {
-            background-color: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .icon-client {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-
-        .badge-status {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 50px;
-        }
-
-        .status-manager {
-            background-color: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .status-client {
-            background-color: #f1f5f9;
-            color: #475569;
-        }
-
-        .status-active {
-            background-color: #dcfce7;
-            color: #15803d;
-        }
-
-        .status-inactive {
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .table {
-            font-size: 0.9rem;
-            vertical-align: middle;
-        }
-
-        .table th {
-            font-weight: 600;
-            color: #475569;
-            background-color: #f8fafc;
-        }
-
-        .metric-card h3 {
-            font-size: 1.35rem;
-            white-space: nowrap;
-        }
-
-        .metric-card .card-label {
-            font-size: 0.78rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .metric-card .card-subtext {
-            font-size: 0.75rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            background: #f1f5f9;
-        }
-
-        .modal-content {
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Password Validation & Strength UI */
-        .password-checklist {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-top: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .password-req-item {
-            font-size: 0.78rem;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-            transition: color 0.2s ease;
-        }
-
-        .password-req-item i {
-            font-size: 0.85rem;
-            transition: transform 0.2s ease;
-        }
-
-        .password-req-item.valid {
-            color: #10b981;
-            font-weight: 500;
-        }
-
-        .password-req-item.valid i {
-            color: #10b981;
-            transform: scale(1.1);
-        }
-
-        .password-req-item.invalid {
-            color: #64748b;
-        }
-
-        .password-req-item.invalid.has-input {
-            color: #ef4444;
-        }
-
-        .password-req-item.invalid.has-input i {
-            color: #ef4444;
-        }
-
-        .strength-bar-container {
-            height: 6px;
-            border-radius: 4px;
-            background-color: #e2e8f0;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 4px;
-            transition: width 0.3s ease, background-color 0.3s ease;
-        }
-
-        .strength-weak {
-            width: 25%;
-            background-color: #ef4444;
-        }
-
-        .strength-fair {
-            width: 50%;
-            background-color: #f59e0b;
-        }
-
-        .strength-good {
-            width: 75%;
-            background-color: #3b82f6;
-        }
-
-        .strength-strong {
-            width: 100%;
-            background-color: #10b981;
-        }
-
-        .toggle-password-btn {
-            border: 1px solid #ced4da;
-            border-left: none;
-            background: #f8fafc;
-            color: #64748b;
-            padding: 0 14px;
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .toggle-password-btn:hover {
-            background: #f1f5f9;
-            color: #334155;
-        }
-    </style>
+    
 </head>
 
 <body>
 
     <?php include("nav.php"); ?>
 
-    <div class="container py-4 animate__animated animate__fadeIn">
+    <div class="sg-layout">
+        <main class="sg-main animate__animated animate__fadeIn">
 
-        <!-- Welcome banner section -->
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-            <div>
-                <h1 class="h3 fw-bold text-dark m-0">User Account Management</h1>
-                <p class="text-secondary small m-0">Control system access roles, user identities, and credentials</p>
+            <!-- Welcome banner section -->
+            <div class="sg-page-header">
+                <div>
+                    <h1 class="sg-page-title"><i class="fa-solid fa-users-gear me-2 text-purple"></i>User Account Management</h1>
+                    <p class="sg-page-subtitle">Control system access roles, user identities, and credentials</p>
+                </div>
+                <div>
+                    <button class="sg-btn sg-btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fa-solid fa-user-plus me-1"></i> Add New User
+                    </button>
+                </div>
             </div>
-            <div>
-                <button class="btn btn-primary rounded-3 px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                    <i class="fa-solid fa-user-plus me-1"></i> Add New User
-                </button>
-            </div>
-        </div>
 
-        <!-- Metrics Overview Grid -->
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4">
-                <div class="metric-card d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="icon-shape icon-users mb-2">
+            <!-- Metrics Overview Grid -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="sg-metric">
+                        <div class="sg-icon-box sg-icon-users">
                             <i class="fa-solid fa-users"></i>
                         </div>
-                        <div class="card-label text-muted fw-medium">Total Accounts</div>
-                        <h3 class="fw-bold mb-0 text-dark" id="total-users-count">0</h3>
-                        <div class="card-subtext text-success mt-1">
+                        <div class="sg-metric-label">Total Accounts</div>
+                        <div class="sg-metric-value" id="total-users-count">0</div>
+                        <div class="sg-metric-sub text-green">
                             <i class="fa-solid fa-circle-check me-1"></i> Registered profiles
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-12 col-md-4">
-                <div class="metric-card d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="icon-shape icon-manager mb-2">
+                <div class="col-12 col-md-4">
+                    <div class="sg-metric">
+                        <div class="sg-icon-box sg-icon-manager">
                             <i class="fa-solid fa-user-gear"></i>
                         </div>
-                        <div class="card-label text-muted fw-medium">Manager Roles</div>
-                        <h3 class="fw-bold mb-0 text-dark" id="manager-users-count">0</h3>
-                        <div class="card-subtext text-secondary mt-1">
+                        <div class="sg-metric-label">Manager Roles</div>
+                        <div class="sg-metric-value text-cyan" id="manager-users-count">0</div>
+                        <div class="sg-metric-sub text-sg-muted">
                             <i class="fa-solid fa-shield-halved me-1"></i> Full system access
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-12 col-md-4">
-                <div class="metric-card d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="icon-shape icon-client mb-2">
+                <div class="col-12 col-md-4">
+                    <div class="sg-metric">
+                        <div class="sg-icon-box sg-icon-client">
                             <i class="fa-solid fa-user-tag"></i>
                         </div>
-                        <div class="card-label text-muted fw-medium">Client Roles</div>
-                        <h3 class="fw-bold mb-0 text-dark" id="client-users-count">0</h3>
-                        <div class="card-subtext text-secondary mt-1">
+                        <div class="sg-metric-label">Client Roles</div>
+                        <div class="sg-metric-value text-purple" id="client-users-count">0</div>
+                        <div class="sg-metric-sub text-sg-muted">
                             <i class="fa-solid fa-eye me-1"></i> Monitoring privileges
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- User Data Table Section -->
-        <div class="log-card p-0 overflow-hidden">
-            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
-                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-gear me-2 text-success"></i>System Users</h5>
-                <span class="badge bg-light text-dark border" id="table-count-badge">Loading...</span>
+            <!-- User Data Table Section -->
+            <div class="sg-card mb-4">
+                <div class="sg-card-header">
+                    <h5 class="sg-card-title"><i class="fa-solid fa-users-gear"></i> System Users</h5>
+                    <span class="sg-badge sg-badge-purple" id="table-count-badge">Loading...</span>
+                </div>
+                <div class="sg-table-wrap">
+                    <table class="sg-table">
+                        <thead>
+                            <tr>
+                                <th>User Details</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-sg-muted">
+                                    <i class="fa-solid fa-spinner fa-spin me-2"></i> Loading user accounts...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-3">User Details</th>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Created Date</th>
-                            <th class="text-end pe-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-table-body">
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-spinner fa-spin me-2"></i> Loading user accounts...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
+        </main>
     </div>
 
     <!-- ================= ADD USER MODAL ================= -->
@@ -433,7 +195,7 @@ include "../include/dbcon.php";
                     </div>
                     <div class="modal-footer border-top-0 pt-0">
                         <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold" id="addUserSubmitBtn">Save User</button>
+                        <button type="submit" class="btn sg-btn sg-btn-primary rounded-3 fw-semibold" id="addUserSubmitBtn">Save User</button>
                     </div>
                 </form>
             </div>
@@ -469,37 +231,49 @@ include "../include/dbcon.php";
                                 </button>
                             </div>
 
-                            <!-- Edit Strength Meter & Checklist (shown only if typing password) -->
-                            <div id="edit_password_feedback" style="display: none;">
-                                <div class="strength-bar-container">
-                                    <div id="edit_strength_bar" class="strength-bar"></div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <span class="small text-secondary" style="font-size: 0.75rem;">Password Strength:</span>
-                                    <span id="edit_strength_text" class="small fw-semibold text-secondary" style="font-size: 0.75rem;">None</span>
-                                </div>
+                            <!-- Password Strength Progress Bar -->
+                            <div class="strength-bar-container">
+                                <div id="edit_strength_bar" class="strength-bar"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="small text-secondary" style="font-size: 0.75rem;">Password Strength:</span>
+                                <span id="edit_strength_text" class="small fw-semibold text-secondary" style="font-size: 0.75rem;">None</span>
+                            </div>
 
-                                <div class="password-checklist">
-                                    <div class="small fw-semibold text-dark mb-2"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Security Requirements:</div>
-                                    <div class="password-req-item" id="edit_req_len">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>Minimum length (8+ characters)</span>
-                                    </div>
-                                    <div class="password-req-item" id="edit_req_case">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>Uppercase and lowercase letters</span>
-                                    </div>
-                                    <div class="password-req-item" id="edit_req_num">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>At least one number (0-9)</span>
-                                    </div>
-                                    <div class="password-req-item" id="edit_req_spec">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>At least one special character (!@#$%...)</span>
-                                    </div>
-                                    <div class="password-req-item" id="edit_req_common">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>Not a common/weak password</span>
-                                    </div>
-                                    <div class="password-req-item" id="edit_req_personal">
-                                        <i class="fa-solid fa-circle-xmark"></i> <span>Doesn't contain username or personal info</span>
-                                    </div>
+                            <!-- Real-Time Password Checklist -->
+                            <div class="password-checklist">
+                                <div class="small fw-semibold text-dark mb-2"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Security Requirements:</div>
+                                <div class="password-req-item" id="edit_req_len">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Minimum length (8+ characters)</span>
                                 </div>
+                                <div class="password-req-item" id="edit_req_case">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Uppercase and lowercase letters</span>
+                                </div>
+                                <div class="password-req-item" id="edit_req_num">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>At least one number (0-9)</span>
+                                </div>
+                                <div class="password-req-item" id="edit_req_spec">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>At least one special character (!@#$%...)</span>
+                                </div>
+                                <div class="password-req-item" id="edit_req_common">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Not a common/weak password</span>
+                                </div>
+                                <div class="password-req-item" id="edit_req_personal">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span>Doesn't contain username or personal info</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Confirm New Password</label>
+                            <div class="input-group">
+                                <input type="password" id="edit_confirm_password" class="form-control" style="border-radius: 8px 0 0 8px;" placeholder="Re-enter new password" autocomplete="new-password">
+                                <button type="button" class="btn toggle-password-btn" data-target="#edit_confirm_password" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="mt-1" id="edit_match_indicator" style="display: none;">
+                                <span class="small fw-semibold" id="edit_match_text"></span>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -519,7 +293,7 @@ include "../include/dbcon.php";
                     </div>
                     <div class="modal-footer border-top-0 pt-0">
                         <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3 fw-semibold" id="editUserSubmitBtn">Update Account</button>
+                        <button type="submit" class="btn sg-btn sg-btn-primary rounded-3 fw-semibold" id="editUserSubmitBtn">Update Account</button>
                     </div>
                 </form>
             </div>
@@ -549,50 +323,50 @@ include "../include/dbcon.php";
                                     if (user.role === 'client') clients++;
 
                                     const roleBadge = user.role === 'manager' 
-                                        ? '<span class="badge-status status-manager"><i class="fa-solid fa-shield-halved me-1"></i>Manager</span>' 
-                                        : '<span class="badge-status status-client"><i class="fa-solid fa-user me-1"></i>Client</span>';
+                                        ? '<span class="sg-badge sg-badge-cyan"><i class="fa-solid fa-shield-halved me-1"></i>Manager</span>' 
+                                        : '<span class="sg-badge sg-badge-purple"><i class="fa-solid fa-user me-1"></i>Client</span>';
 
                                     const userStatus = user.status || 'active';
                                     const statusBadge = userStatus === 'active'
-                                        ? '<span class="badge-status status-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>'
-                                        : '<span class="badge-status status-inactive"><i class="fa-solid fa-circle-xmark me-1"></i>Disable</span>';
+                                        ? '<span class="sg-badge sg-badge-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>'
+                                        : '<span class="sg-badge sg-badge-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Disabled</span>';
 
                                     rows += `
                                         <tr>
-                                            <td class="ps-3">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center me-3 border fw-bold" style="width: 36px; height: 36px;">
+                                            <td>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="sg-avatar" style="width:34px;height:34px;font-size:0.8rem;">
                                                         ${user.name.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
-                                                        <div class="fw-bold text-dark">${escapeHtml(user.name)}</div>
+                                                        <div class="fw-bold text-white">${escapeHtml(user.name)}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="fw-medium text-secondary">${escapeHtml(user.username)}</td>
+                                            <td class="font-monospace text-sg-muted">${escapeHtml(user.username)}</td>
                                             <td>${roleBadge}</td>
                                             <td>${statusBadge}</td>
-                                            <td class="text-muted small">${user.created_at}</td>
-                                            <td class="text-end pe-3">
+                                            <td class="text-sg-muted small">${user.created_at}</td>
+                                            <td class="text-end">
                                                 <button class="action-btn me-1 edit-btn" 
                                                     data-id="${user.id}" 
                                                     data-name="${escapeHtml(user.name)}" 
                                                     data-username="${escapeHtml(user.username)}" 
                                                     data-role="${user.role}"
                                                     data-status="${userStatus}">
-                                                    <i class="fa-solid fa-pen-to-square text-primary"></i>
+                                                    <i class="fa-solid fa-pen-to-square text-cyan"></i>
                                                 </button>
                                                 <button class="action-btn delete-btn" 
                                                     data-id="${user.id}" 
                                                     data-name="${escapeHtml(user.name)}">
-                                                    <i class="fa-solid fa-trash text-danger"></i>
+                                                    <i class="fa-solid fa-trash text-red"></i>
                                                 </button>
                                             </td>
                                         </tr>
                                     `;
                                 });
                             } else {
-                                rows = '<tr><td colspan="6" class="text-center py-4 text-muted">No user accounts found.</td></tr>';
+                                rows = '<tr><td colspan="6" class="text-center py-4 text-sg-muted">No user accounts found.</td></tr>';
                             }
 
                             // Update HTML and counters
@@ -747,14 +521,35 @@ include "../include/dbcon.php";
                 const pwd = $('#edit_user_password').val();
                 const username = $('#edit_username').val();
                 const name = $('#edit_name').val();
-                if (pwd.length > 0) {
-                    $('#edit_password_feedback').slideDown(200);
-                    const result = checkPasswordRules(pwd, username, name);
-                    updateChecklistUI('edit', result, pwd);
-                } else {
-                    $('#edit_password_feedback').slideUp(200);
-                }
+                const result = checkPasswordRules(pwd, username, name);
+                updateChecklistUI('edit', result, pwd);
+                checkEditPasswordMatch();
             });
+
+            $('#edit_confirm_password').on('input', function() {
+                checkEditPasswordMatch();
+            });
+
+            function checkEditPasswordMatch() {
+                const pwd = $('#edit_user_password').val();
+                const confirmPwd = $('#edit_confirm_password').val();
+                const matchInd = $('#edit_match_indicator');
+                const matchText = $('#edit_match_text');
+
+                if (pwd.length === 0 || confirmPwd.length === 0) {
+                    matchInd.hide();
+                    return;
+                }
+
+                matchInd.show();
+                if (pwd === confirmPwd) {
+                    matchText.removeClass('text-danger').addClass('text-success')
+                             .html('<i class="fa-solid fa-circle-check me-1"></i> Passwords match');
+                } else {
+                    matchText.removeClass('text-success').addClass('text-danger')
+                             .html('<i class="fa-solid fa-circle-xmark me-1"></i> Passwords do not match');
+                }
+            }
 
             // Function 2: Add User AJAX with Password Validation Guard
             $('#addUserForm').on('submit', function(e) {
@@ -819,8 +614,10 @@ include "../include/dbcon.php";
                 $('#edit_role').val($(this).data('role'));
                 $('#edit_status').val($(this).data('status'));
                 $('#edit_user_password').val('').attr('type', 'password');
+                $('#edit_confirm_password').val('').attr('type', 'password');
                 $('#editUserModal .toggle-password-btn i').removeClass('fa-eye-slash fa-solid text-primary').addClass('fa-eye fa-regular');
-                $('#edit_password_feedback').hide();
+                updateChecklistUI('edit', checkPasswordRules('', '', ''), '');
+                $('#edit_match_indicator').hide();
                 $('#editUserModal').modal('show');
             });
 
@@ -829,11 +626,22 @@ include "../include/dbcon.php";
                 e.preventDefault();
 
                 const pwd = $('#edit_user_password').val();
+                const confirmPwd = $('#edit_confirm_password').val();
                 const username = $('#edit_username').val();
                 const name = $('#edit_name').val();
 
-                // If user entered a new password, validate it
+                // If user entered a new password, validate it and check match
                 if (pwd.length > 0) {
+                    if (pwd !== confirmPwd) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Passwords Do Not Match',
+                            text: 'The new password and confirmation password must match exactly.',
+                            confirmButtonColor: '#10b981'
+                        });
+                        return false;
+                    }
+
                     const val = checkPasswordRules(pwd, username, name);
                     if (!val.isValid) {
                         let missingMsg = [];

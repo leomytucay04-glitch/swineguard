@@ -1,176 +1,68 @@
-<?php
-
-// Set maximum idle time to 5 minutes (300 seconds)
-$timeout_duration = 600;
-
-if (isset($_SESSION['last_activity1'])) {
-    if ((time() - $_SESSION['last_activity1']) > $timeout_duration) {
-        session_unset();
-        session_destroy();
-        header("Location: logout.php?reason=timeout");
-        exit();
+﻿<?php
+$timeout_duration = 300;
+if (isset($_SESSION['last_activity3'])) {
+    if ((time() - $_SESSION['last_activity3']) > $timeout_duration) {
+        session_unset(); session_destroy();
+        header("Location: logout.php?reason=timeout"); exit();
     }
 }
-
-$_SESSION['last_activity1'] = time();
+$_SESSION['last_activity3'] = time();
 $current_page = basename($_SERVER['PHP_SELF']);
+$user_initials = 'CL';
+if (isset($_SESSION['user_name'])) {
+    $parts = explode(' ', trim($_SESSION['user_name']));
+    $user_initials = strtoupper(substr($parts[0],0,1) . (isset($parts[1]) ? substr($parts[1],0,1) : ''));
+}
 ?>
 
-<nav class="navbar navbar-expand-lg navbar-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="dashboard.php">
-            <i class="fa-solid fa-shield-halved text-success me-2"></i>
-            Swine Guard
-        </a>
-        
-        <!-- TIMEOUT BADGE (Hidden) -->
-        <div id="session-timer-badge" class="ms-3 px-3 py-1 bg-dark text-warning rounded-pill border border-warning small align-items-center" style="display: none !important;">
-            <i class="fa-solid fa-clock me-2"></i>
-            <span>Session Timeout: <strong id="timer-display">05:00</strong></span>
-        </div>
+<header class="sg-topbar">
+    <a href="dashboard.php" class="sg-brand">
+        <i class="fa-solid fa-shield-halved"></i>
+        Swine Guard
+    </a>
+    <div id="session-timer-badge"></div>
+    <div class="sg-topbar-actions">
+        <span class="sg-live-badge"><span class="dot"></span> Live</span>
+        <a href="profile.php" class="sg-topbar-btn" title="Profile"><i class="fa-solid fa-circle-user"></i></a>
+        <div class="sg-avatar" title="Client"><?= $user_initials ?></div>
+        <button class="sg-topbar-btn sg-sidebar-toggle" id="sidebarToggle" title="Menu"><i class="fa-solid fa-bars"></i></button>
+    </div>
+</header>
 
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == 'dashboard.php') ? 'active fw-semibold' : ''; ?>" href="dashboard.php">
-                        <i class="fa-solid fa-chart-pie me-1 small"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == 'analytics.php') ? 'active fw-semibold' : ''; ?>" href="analytics.php">
-                        <i class="fa-solid fa-chart-line me-1 small"></i> Analytics
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == 'records.php') ? 'active fw-semibold' : ''; ?>" href="records.php">
-                        <i class="fa-solid fa-folder-open me-1 small"></i> Records
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= ($current_page == 'profile.php') ? 'active fw-semibold' : ''; ?>" href="profile.php">
-                        <i class="fa-solid fa-circle-user me-1 small"></i> Profile
-                    </a>
-                </li>
-                <li class="nav-item ms-lg-2">
-                    <a class="nav-link text-danger-hover" style="cursor: pointer;" onclick="logout()">
-                        <i class="fa-solid fa-right-from-bracket me-1 small"></i> Logout
-                    </a>
-                </li>
-            </ul>
+<div class="sg-sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sg-sidebar" id="sgSidebar">
+    <nav class="sg-nav">
+        <div class="sg-nav-section">Monitor</div>
+        <a href="dashboard.php" class="sg-nav-item <?= ($current_page=='dashboard.php')?'active':'' ?>">
+            <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+        </a>
+        <a href="analytics.php" class="sg-nav-item <?= ($current_page=='analytics.php')?'active':'' ?>">
+            <i class="fa-solid fa-chart-line"></i><span>Analytics</span>
+        </a>
+        <a href="records.php" class="sg-nav-item <?= ($current_page=='records.php')?'active':'' ?>">
+            <i class="fa-solid fa-folder-open"></i><span>Records</span>
+        </a>
+        <div class="sg-nav-section">Account</div>
+        <a href="profile.php" class="sg-nav-item <?= ($current_page=='profile.php')?'active':'' ?>">
+            <i class="fa-solid fa-circle-user"></i><span>Profile</span>
+        </a>
+    </nav>
+    <div class="sg-sidebar-footer">
+        <div class="sg-nav-item danger" style="cursor:pointer;" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
         </div>
     </div>
-</nav>
-
+</aside>
 
 <script src="../include/jquery.js"></script>
-
 <script>
-    function logout() {
-        Swal.fire({
-            title: "Confirm Logout",
-            text: "Are you sure you want to logout?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#6a11cb",
-            cancelButtonColor: "#666",
-            confirmButtonText: "Yes, Logout"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = "logout.php";
-            }
-        });
-    }
-
-    // Client-side 5-Minute Inactivity Timeout Logic
-    (function () {
-        const timeoutInSeconds = <?= $timeout_duration ?>; // 300 seconds
-        let timeRemaining = timeoutInSeconds;
-        let countdownInterval;
-
-        function updateDisplay() {
-            const minutes = Math.floor(timeRemaining / 60);
-            const seconds = timeRemaining % 60;
-            const formattedMinutes = String(minutes).padStart(2, '0');
-            const formattedSeconds = String(seconds).padStart(2, '0');
-            
-            const timerElement = document.getElementById('timer-display');
-            if (timerElement) {
-                timerElement.textContent = `${formattedMinutes}:${formattedSeconds}`;
-            }
-        }
-
-        function startCountdown() {
-            clearInterval(countdownInterval);
-            timeRemaining = timeoutInSeconds;
-            updateDisplay();
-
-            countdownInterval = setInterval(() => {
-                timeRemaining--;
-                updateDisplay();
-
-                if (timeRemaining <= 0) {
-                    clearInterval(countdownInterval);
-                    triggerTimeout();
-                }
-            }, 1000);
-        }
-
-        function triggerTimeout() {
-            Swal.fire({
-                title: "Session Expired",
-                text: "You have been logged out due to 5 minutes of inactivity.",
-                icon: "info",
-                confirmButtonColor: "#6a11cb",
-                confirmButtonText: "OK",
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            }).then(() => {
-                window.location.href = "logout.php?reason=timeout";
-            });
-        }
-
-        // Resets timer on user interaction
-        window.onload = startCountdown;
-        document.onmousemove = startCountdown;
-        document.onkeypress = startCountdown;
-        document.onclick = startCountdown;
-        document.onscroll = startCountdown;
+    function logout(){Swal.fire({title:"Confirm Logout",text:"Are you sure?",icon:"warning",showCancelButton:true,confirmButtonColor:"#7c3aed",cancelButtonColor:"#1c1c30",confirmButtonText:"Yes, Logout"}).then((r)=>{if(r.isConfirmed)window.location.href="logout.php";});}
+    document.getElementById('sidebarToggle')?.addEventListener('click',function(){document.getElementById('sgSidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show');});
+    document.getElementById('sidebarOverlay')?.addEventListener('click',function(){document.getElementById('sgSidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show');});
+    (function(){
+        const t=<?= $timeout_duration ?>;let r=t;let i;
+        function s(){clearInterval(i);r=t;i=setInterval(()=>{r--;if(r<=0){clearInterval(i);Swal.fire({title:"Session Expired",text:"Logged out due to inactivity.",icon:"info",confirmButtonColor:"#7c3aed",confirmButtonText:"OK",allowOutsideClick:false,allowEscapeKey:false}).then(()=>{window.location.href="logout.php?reason=timeout";});}},1000);}
+        window.onload=s;document.onmousemove=s;document.onkeypress=s;document.onclick=s;document.onscroll=s;
     })();
 </script>
-
-<style>
-    /* Clean navigation visual overrides */
-    .navbar {
-        background-color: #0f172a !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        padding: 15px 0;
-    }
-
-    .navbar-dark .navbar-nav .nav-link {
-        color: #94a3b8;
-        transition: color 0.2s, background-color 0.2s;
-        padding: 8px 16px;
-        border-radius: 6px;
-    }
-
-    .navbar-dark .navbar-nav .nav-link:hover,
-    .navbar-dark .navbar-nav .nav-link.active {
-        color: #ffffff !important;
-    }
-
-    .navbar-dark .navbar-nav .nav-link.active {
-        background-color: #1e293b;
-    }
-
-    .text-danger-hover:hover {
-        color: #ef4444 !important;
-    }
-
-    /* Hidden session timer badge */
-    #session-timer-badge {
-        display: none !important;
-    }
-</style>

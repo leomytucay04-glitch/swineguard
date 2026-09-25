@@ -4,17 +4,22 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 2. Check if user is logged in
-if (!isset($_SESSION['user'])) {
+// 2. Check if user or admin is logged in
+if (!isset($_SESSION['user']) && !isset($_SESSION['admin'])) {
     header("Location: ../login.php");
     exit();
+}
+
+// Set fallback user display info if accessed by admin
+if (!isset($_SESSION['user_name']) && isset($_SESSION['name'])) {
+    $_SESSION['user_name'] = $_SESSION['name'];
 }
 
 // 3. Include dbcon.php to perform status check
 require_once __DIR__ . '/../include/dbcon.php';
 
-// 4. Verify user status in database
-if (isset($conn) && $conn instanceof mysqli) {
+// 4. Verify user status in database if logged in as user
+if (isset($_SESSION['user']) && isset($conn) && $conn instanceof mysqli) {
     $userId = $_SESSION['user'];
     $stmt = $conn->prepare("SELECT status FROM users WHERE id = ? LIMIT 1");
     
@@ -25,7 +30,7 @@ if (isset($conn) && $conn instanceof mysqli) {
         
         if ($user = $result->fetch_assoc()) {
             $status = strtolower(trim($user['status'] ?? ''));
-            if ($status !== 'active') {
+            if ($status === 'disable' || $status === 'disabled') {
                 session_unset();
                 session_destroy();
                 header("Location: ../login.php?error=disabled");
@@ -39,13 +44,5 @@ if (isset($conn) && $conn instanceof mysqli) {
         }
         $stmt->close();
     }
-}
-
-// =========================================================
-// LAST ROWS: Unset/close connection so page can safely re-include dbcon.php
-// =========================================================
-if (isset($conn) && $conn instanceof mysqli) {
-    mysqli_close($conn);
-    unset($conn);
 }
 ?>

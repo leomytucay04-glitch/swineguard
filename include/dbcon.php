@@ -16,7 +16,7 @@ if (!function_exists('online')) {
     {
         // Hostinger Database Configuration
         $GLOBALS['dbservername'] = "localhost";
-        $GLOBALS['dbusername']   = "u793614128_user_pig";
+        $GLOBALS['dbusername']   = "u793614128_pig";
         $GLOBALS['dbpassword']   = "@Swine2026";
         $GLOBALS['dbname']       = "u793614128_pig";
     }

@@ -1,13 +1,11 @@
 <?php
 session_start();
 
-// 1. Check if an Admin is already logged in
 if (isset($_SESSION['admin'])) {
     header("Location: admin/dashboard.php");
     exit();
 }
 
-// 2. Check if a Manager or Client is already logged in
 if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'manager') {
         header("Location: manager/dashboard.php");
@@ -20,239 +18,215 @@ if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Swine Guard</title>
+    <meta name="description" content="Swine Guard Administrator Login Portal">
 
     <link rel="stylesheet" href="include/fonts.css">
-    <script src="include/jquery.js"></script>
     <link rel="stylesheet" href="include/bootstrap.css">
-    <link rel="stylesheet" href="include/icons.css">
+    <link rel="stylesheet" href="include/fontawesome-free-6.7.2-web/css/all.min.css">
     <script src="include/sweetalert.js"></script>
     <script src="include/bootstrap.js"></script>
     <script src="include/popper.js"></script>
-    <link rel="stylesheet" href="include/fontawesome-free-6.7.2-web/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #10b981;
-            /* Tech Green */
-            --dark-color: #0f172a;
-            /* Deep Slate */
-            --bg-color: #f8fafc;
-            /* Light Modern Gray */
-        }
+    <link rel="stylesheet" href="include/theme.css">
 
+    <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: #334155;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-        }
-
-        /* Navbar Styling */
-        .navbar {
-            background-color: var(--dark-color) !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-brand,
-        .nav-link {
-            color: #fff !important;
-            transition: color 0.3s ease;
-        }
-
-        .navbar-brand:hover,
-        .nav-link:hover {
-            color: var(--primary-color) !important;
-        }
-
-        /* Split Screen Login Layout */
-        .login-wrapper {
-            max-width: 900px;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 16px;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark);
+            position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         }
-
-        .brand-panel {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: white;
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(6,182,212,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,182,212,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            left: -200px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .login-page-wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 960px;
+            padding: 1rem;
+        }
+        .login-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        @media (max-width: 640px) {
+            .login-card { grid-template-columns: 1fr; }
+            .login-brand { display: none; }
+        }
+        .login-brand {
+            background: linear-gradient(145deg, #060612 0%, #0a0d22 50%, #060e1a 100%);
+            padding: 3rem 2rem;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            padding: 40px;
+            justify-content: center;
             text-align: center;
             position: relative;
+            border-right: 1px solid var(--border);
         }
-
-        .brand-panel::before {
+        .login-brand::before {
             content: '';
             position: absolute;
             inset: 0;
-            opacity: 0.05;
-            background-image: radial-gradient(#fff 2px, transparent 2px);
-            background-size: 24px 24px;
+            background-image:
+                linear-gradient(rgba(6,182,212,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
         }
-
-        .brand-icon {
-            font-size: 3.5rem;
-            color: var(--primary-color);
-            margin-bottom: 20px;
+        .brand-logo-wrap { position: relative; z-index: 1; margin-bottom: 1.5rem; }
+        .brand-hex {
+            width: 90px; height: 90px;
+            background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(124,58,237,0.15));
+            border: 2px solid rgba(6,182,212,0.35);
+            border-radius: 24px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; color: var(--cyan); margin: 0 auto;
         }
-
-        /* Form Controls styling */
-        .form-section {
-            padding: 40px;
+        .brand-name {
+            position: relative; z-index: 1;
+            font-size: 1.75rem; font-weight: 800;
+            background: linear-gradient(90deg, #fff 0%, var(--purple-light) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 0.5rem; letter-spacing: -0.5px;
         }
-
-        .form-section h2 {
-            font-weight: 700;
-            color: var(--dark-color);
-            margin-bottom: 8px;
+        .brand-tagline { position: relative; z-index: 1; color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; max-width: 240px; }
+        .brand-stats { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 2rem; width: 100%; }
+        .brand-stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.75rem; text-align: center; }
+        .brand-stat-val { font-size: 1.1rem; font-weight: 700; color: var(--purple-light); }
+        .brand-stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .login-form-panel { padding: 3rem 2.5rem; }
+        .login-portal-badge {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.25); color: var(--cyan);
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 4px 12px; border-radius: 50px; margin-bottom: 1.5rem;
         }
-
-        .subtitle {
-            color: #64748b;
-            font-size: 0.95rem;
-            margin-bottom: 28px;
+        .login-title { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .login-subtitle { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; }
+        .sg-input-group { position: relative; margin-bottom: 1.25rem; }
+        .sg-input-label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+        .sg-input-wrap { position: relative; }
+        .sg-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; pointer-events: none; transition: color 0.2s; }
+        .sg-input {
+            width: 100%; background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-primary);
+            padding: 12px 14px 12px 40px; border-radius: 10px; font-size: 0.95rem; font-family: inherit;
+            transition: border-color 0.2s, background 0.2s; outline: none;
         }
-
-        .input-group-text {
-            background-color: #f1f5f9;
-            border-right: none;
-            color: #94a3b8;
+        .sg-input:focus { border-color: var(--cyan); background: rgba(6,182,212,0.04); }
+        .sg-input-wrap:focus-within .sg-input-icon { color: var(--cyan); }
+        .sg-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+        .sg-login-btn {
+            width: 100%; background: linear-gradient(135deg, var(--cyan), #0284c7);
+            border: none; color: #fff; font-weight: 700; font-size: 1rem; padding: 13px; border-radius: 10px;
+            cursor: pointer; margin-top: 0.5rem; margin-bottom: 1.5rem;
+            transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.02em; font-family: inherit;
         }
-
-        .form-control {
-            border-left: none;
-            background-color: #f1f5f9;
-            padding: 12px;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus {
-            background-color: #fff;
-            border-color: var(--primary-color);
-            box-shadow: none;
-        }
-
-        .form-control:focus+.input-group-text,
-        .input-group:focus-within .input-group-text {
-            border-color: var(--primary-color);
-            background-color: #fff;
-            color: var(--primary-color);
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border: none;
-            padding: 14px;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background-color: #059669;
-            transform: translateY(-1px);
-        }
-
-        .portal-badge {
-            display: inline-block;
-            background-color: #ecfdf5;
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            padding: 4px 10px;
-            border-radius: 50px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-        }
-
-        .switch-portal-link {
-            text-align: center;
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .switch-portal-link a {
-            color: #0f172a;
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .switch-portal-link a:hover {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            .brand-panel {
-                display: none;
-            }
-
-            .form-section {
-                padding: 30px 20px;
-            }
-        }
+        .sg-login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .sg-login-btn:active { transform: translateY(0); }
+        .sg-divider { border: none; border-top: 1px solid var(--border); margin-bottom: 1.25rem; }
+        .sg-switch-link { text-align: center; font-size: 0.875rem; color: var(--text-muted); }
+        .sg-switch-link a { color: var(--purple-light); font-weight: 600; text-decoration: none; transition: color 0.2s; }
+        .sg-switch-link a:hover { color: var(--cyan); text-decoration: underline; }
     </style>
 </head>
 
 <body>
+    <div class="login-page-wrap">
+        <div class="login-card">
 
-    <div class="container flex-grow-1 d-flex align-items-center justify-content-center my-5">
-        <div class="login-wrapper row g-0 animate__animated animate__fadeIn">
-
-            <!-- Left Branding Panel -->
-            <div class="col-md-5 brand-panel d-none d-md-flex">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-shield-halved"></i>
+            <!-- Brand Panel -->
+            <div class="login-brand d-none d-sm-flex flex-column">
+                <div class="brand-logo-wrap">
+                    <div class="brand-hex"><i class="fa-solid fa-shield-halved"></i></div>
                 </div>
-                <h3 class="fw-bold mb-2">Swine Guard</h3>
-                <p class="text-white-50 small">Advanced Livestock Protection & Management Ecosystem</p>
+                <div class="brand-name">Swine Guard</div>
+                <div class="brand-tagline">Advanced Livestock Protection &amp; Management Ecosystem</div>
+                <div class="brand-stats">
+                    <div class="brand-stat">
+                        <div class="brand-stat-val">24/7</div>
+                        <div class="brand-stat-label">Monitoring</div>
+                    </div>
+                    <div class="brand-stat">
+                        <div class="brand-stat-val" style="color:var(--cyan);">IoT</div>
+                        <div class="brand-stat-label">Integrated</div>
+                    </div>
+                    <div class="brand-stat">
+                        <div class="brand-stat-val" style="color:var(--amber);">Auto</div>
+                        <div class="brand-stat-label">Fan Control</div>
+                    </div>
+                    <div class="brand-stat">
+                        <div class="brand-stat-val"><i class="fa-solid fa-circle" style="color:#22c55e;font-size:0.55rem;"></i> Live</div>
+                        <div class="brand-stat-label">Telemetry</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right Form Section -->
-            <div class="col-md-7 form-section">
-                <span class="portal-badge"><i class="fa-solid fa-user-shield me-1"></i> System Administrator</span>
-                <h2>Admin Login</h2>
-                <p class="subtitle">Enter your administrator credentials to manage the platform</p>
+            <!-- Form Panel -->
+            <div class="login-form-panel">
+                <div class="login-portal-badge">
+                    <i class="fa-solid fa-user-shield"></i>
+                    Administrator Portal
+                </div>
 
-                <form id="submitForm" method="POST">
-                    <div class="mb-3">
-                        <label for="username" class="form-label small fw-medium text-secondary">Admin Username</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-regular fa-user"></i></span>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter admin username" required>
+                <h1 class="login-title">Admin Login</h1>
+                <p class="login-subtitle">Restricted access — Administrators only</p>
+
+                <form id="adminSubmitForm" method="POST" autocomplete="off">
+                    <div class="sg-input-group">
+                        <label for="username" class="sg-input-label">Username</label>
+                        <div class="sg-input-wrap">
+                            <i class="fa-solid fa-user-shield sg-input-icon"></i>
+                            <input type="text" class="sg-input" id="username" name="username" placeholder="Admin username" required autocomplete="username">
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label small fw-medium text-secondary">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+                    <div class="sg-input-group">
+                        <label for="password" class="sg-input-label">Password</label>
+                        <div class="sg-input-wrap">
+                            <i class="fa-solid fa-lock sg-input-icon"></i>
+                            <input type="password" class="sg-input" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 shadow-sm mb-4">
-                        Sign In as Admin <i class="fa-solid fa-arrow-right ms-2 small"></i>
+                    <button type="submit" class="sg-login-btn" id="adminLoginBtn">
+                        <i class="fa-solid fa-right-to-bracket me-2"></i>Admin Sign In
                     </button>
 
-                    <!-- Staff / Client Portal Switcher Link -->
-                    <div class="switch-portal-link pt-2 border-top">
-                        <span>Not an administrator? </span>
-                        <a href="login.php"><i class="fa-solid fa-users me-1"></i> Login as Staff / Client</a>
+                    <hr class="sg-divider">
+
+                    <div class="sg-switch-link">
+                        <span>Staff or Manager? </span>
+                        <a href="login.php"><i class="fa-solid fa-users me-1"></i>Staff Portal Login</a>
                     </div>
                 </form>
             </div>
@@ -261,10 +235,12 @@ if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
     </div>
 
     <script src="include/jquery.js"></script>
-
     <script>
-        $("#submitForm").on("submit", function(e) {
+        $("#adminSubmitForm").on("submit", function(e) {
             e.preventDefault();
+            const btn = document.getElementById('adminLoginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Authenticating...';
 
             var formData = new FormData(this);
             $.ajax({
@@ -281,29 +257,19 @@ if (isset($_SESSION['user']) && isset($_SESSION['role'])) {
                     } else if (response === "success") {
                         window.location.href = "admin/dashboard.php";
                     } else {
-                        Swal.fire({
-                            title: "ERROR",
-                            text: response,
-                            icon: "error",
-                            confirmButtonColor: "#10b981",
-                            confirmButtonText: "OK",
-                        });
+                        Swal.fire({title:"Login Failed",text:response,icon:"error",confirmButtonColor:"#7c3aed",confirmButtonText:"OK"});
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Admin Sign In';
                     }
                 },
                 error: function(xhr, status, error) {
-                    Swal.fire({
-                        title: "ERROR",
-                        text: "Something went wrong",
-                        icon: "error",
-                        confirmButtonColor: "#10b981",
-                        confirmButtonText: "OK",
-                    });
+                    Swal.fire({title:"ERROR",text:"Something went wrong. Please try again.",icon:"error",confirmButtonColor:"#7c3aed",confirmButtonText:"OK"});
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Admin Sign In';
                     console.error("AJAX Error:", status, error);
                 },
             });
         });
     </script>
-
 </body>
-
 </html>

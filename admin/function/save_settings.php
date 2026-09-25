@@ -2,29 +2,30 @@
 require_once __DIR__ . '/../../include/dbcon.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Collect and sanitize Automation Rule POST inputs
-    $temp_on   = isset($_POST['fan_trigger_temp']) ? mysqli_real_escape_string($conn, $_POST['fan_trigger_temp']) : '';
-    $temp_off  = isset($_POST['fan_stop_temp']) ? mysqli_real_escape_string($conn, $_POST['fan_stop_temp']) : '';
-    $humid_on  = isset($_POST['pump_trigger_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_trigger_humidity']) : '';
-    $humid_off = isset($_POST['pump_stop_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_stop_humidity']) : '';
-    // Preserve existing heater_on if not provided in POST
-    if (isset($_POST['heater_trigger_temp']) && $_POST['heater_trigger_temp'] !== '') {
-        $heater_on = mysqli_real_escape_string($conn, $_POST['heater_trigger_temp']);
-    } else {
-        $curr_heater = $conn->query("SELECT heater_on FROM settings_rule WHERE id = 1");
-        if ($curr_heater && $curr_heater->num_rows > 0) {
-            $h_row = $curr_heater->fetch_assoc();
-            $heater_on = $h_row['heater_on'] ?? '20.0';
-        } else {
-            $heater_on = '20.0';
-        }
-    }
+    // Fetch existing settings rule to preserve thresholds not present in form
+    $curr_rule = $conn->query("SELECT * FROM settings_rule WHERE id = 1");
+    $r_row = ($curr_rule && $curr_rule->num_rows > 0) ? $curr_rule->fetch_assoc() : [];
+
+    $temp_on   = (isset($_POST['fan_trigger_temp']) && $_POST['fan_trigger_temp'] !== '')
+                 ? mysqli_real_escape_string($conn, $_POST['fan_trigger_temp']) 
+                 : ($r_row['temperature_on'] ?? '28.0');
+
+    $temp_off  = (isset($_POST['fan_stop_temp']) && $_POST['fan_stop_temp'] !== '')
+                 ? mysqli_real_escape_string($conn, $_POST['fan_stop_temp']) 
+                 : ($r_row['temperature_off'] ?? '25.0');
+
+    $humid_on  = isset($_POST['pump_trigger_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_trigger_humidity']) : ($r_row['humidity_on'] ?? '60.0');
+    $humid_off = isset($_POST['pump_stop_humidity']) ? mysqli_real_escape_string($conn, $_POST['pump_stop_humidity']) : ($r_row['humidity_off'] ?? '75.0');
+
+    $heater_on = (isset($_POST['heater_trigger_temp']) && $_POST['heater_trigger_temp'] !== '')
+                 ? mysqli_real_escape_string($conn, $_POST['heater_trigger_temp'])
+                 : ($r_row['heater_on'] ?? '20.0');
 
     // Collect and sanitize Bypass / Emergency controls
-    $fan_bypass     = isset($_POST['fan_bypass']) ? mysqli_real_escape_string($conn, $_POST['fan_bypass']) : 'AUTO';
-    $exhaust_bypass = isset($_POST['exhaust_bypass']) ? mysqli_real_escape_string($conn, $_POST['exhaust_bypass']) : 'AUTO';
-    $pump_bypass    = isset($_POST['water_pump_bypass']) ? mysqli_real_escape_string($conn, $_POST['water_pump_bypass']) : 'AUTO';
-    $heater_bypass  = isset($_POST['heater_bypass']) ? mysqli_real_escape_string($conn, $_POST['heater_bypass']) : 'AUTO';
+    $fan_bypass     = isset($_POST['fan_bypass']) ? mysqli_real_escape_string($conn, $_POST['fan_bypass']) : ($r_row['fan_bypass'] ?? 'AUTO');
+    $exhaust_bypass = isset($_POST['exhaust_bypass']) ? mysqli_real_escape_string($conn, $_POST['exhaust_bypass']) : ($r_row['exhaust_bypass'] ?? 'AUTO');
+    $pump_bypass    = isset($_POST['water_pump_bypass']) ? mysqli_real_escape_string($conn, $_POST['water_pump_bypass']) : ($r_row['water_pump_bypass'] ?? 'AUTO');
+    $heater_bypass  = isset($_POST['heater_bypass']) ? mysqli_real_escape_string($conn, $_POST['heater_bypass']) : ($r_row['heater_bypass'] ?? 'AUTO');
 
     // Save / Update settings_rule (id = 1)
     $check_query = "SELECT id FROM settings_rule WHERE id = 1";

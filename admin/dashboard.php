@@ -8,316 +8,166 @@ include "out.php";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Swine Guard</title>
+    <meta name="description" content="Swine Guard live environmental monitoring dashboard for pig farm automation.">
 
     <link rel="stylesheet" href="../include/fonts.css">
     <link rel="stylesheet" href="../include/bootstrap.css">
     <link rel="stylesheet" href="../include/fontawesome-free-6.7.2-web/css/all.min.css">
     <link rel="stylesheet" href="../include/animate.min.css">
+    <link rel="stylesheet" href="../include/theme.css">
     <script src="../include/bootstrap.js"></script>
     <script src="../include/sweetalert.js"></script>
     <script src="../include/popper.js"></script>
     <script src="../include/chart.js"></script>
     <script src="../include/jquery.js"></script>
-
-    <style>
-        :root {
-            --primary-color: #10b981;
-            --dark-color: #0f172a;
-            --bg-color: #f8fafc;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: #334155;
-            min-height: 100vh;
-        }
-
-        .metric-card,
-        .log-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-            border: 1px solid #e2e8f0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .metric-card {
-            height: 100%;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-        }
-
-        .icon-shape {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            margin-bottom: 16px;
-        }
-
-        .icon-temp {
-            background-color: #fef3c7;
-            color: #d97706;
-        }
-
-        .icon-humidity {
-            background-color: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .icon-fan {
-            background-color: #f3e8ff;
-            color: #7c3aed;
-        }
-
-        .icon-pump {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-
-        .badge-status {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 50px;
-        }
-
-        .status-active {
-            background-color: #dcfce7;
-            color: #15803d;
-        }
-
-        .status-idle {
-            background-color: #f1f5f9;
-            color: #64748b;
-        }
-
-        .spin-slow {
-            animation: fa-spin 3s linear infinite;
-        }
-
-        /* Clean logging table layout updates */
-        .table {
-            font-size: 0.9rem;
-            vertical-align: middle;
-        }
-
-        .table th {
-            font-weight: 600;
-            color: #475569;
-            background-color: #f8fafc;
-        }
-
-        .metric-card {
-            height: 100%;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 16px 14px;
-            /* Reduced from 24px to give text more horizontal room */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-            border: 1px solid #e2e8f0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        /* Prevents headings from breaking awkwardly onto 2 lines */
-        .metric-card h3 {
-            font-size: 1.35rem;
-            white-space: nowrap;
-        }
-
-        /* Card titles text adjustment */
-        .metric-card .card-label {
-            font-size: 0.78rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Subtext single-line enforcement */
-        .metric-card .card-subtext {
-            font-size: 0.75rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    </style>
 </head>
 
 <body>
 
     <?php include("nav.php"); ?>
 
-    <div class="container py-2 animate__animated animate__fadeIn">
+    <div class="sg-layout">
+        <main class="sg-main animate__animated animate__fadeIn">
 
-        <!-- Welcome banner section -->
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 g-3">
-            <div>
-                <h1 class="h3 fw-bold text-dark m-0">Environmental Overview</h1>
-                <p class="text-secondary small m-0">Real-time pen atmosphere monitoring metrics</p>
-            </div>
-            <div>
-                <span class="badge bg-white text-dark border p-2 rounded-3 small text-secondary">
-                    <i class="fa-solid fa-clock me-1 text-success"></i> Live Monitoring Active
+            <!-- Page Header -->
+            <div class="sg-page-header">
+                <div>
+                    <h1 class="sg-page-title">Environmental Overview</h1>
+                    <p class="sg-page-subtitle">Real-time pen atmosphere monitoring metrics</p>
+                </div>
+                <span class="sg-live-badge">
+                    <span class="dot"></span> Live Monitoring Active
                 </span>
             </div>
-        </div>
 
-        <div class="row g-2 mb-5">
+            <!-- Sensor Metric Cards -->
+            <div class="row g-3 mb-4">
 
-            <!-- Temperature Sensor Card -->
-            <div class="col-12 col-sm-6 col-md-4 col-xl">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="icon-shape icon-temp mb-0">
-                            <i class="fa-solid fa-temperature-half"></i>
+                <!-- Temperature -->
+                <div class="col-12 col-sm-6 col-md-4 col-xl">
+                    <div class="sg-metric">
+                        <div class="sg-icon-box sg-icon-temp"><i class="fa-solid fa-temperature-half"></i></div>
+                        <div class="sg-metric-label">Temperature</div>
+                        <div class="sg-metric-value" id="live-temp">--°C</div>
+                        <div class="sg-metric-sub fw-medium" id="temp-subtext">
+                            <i class="fa-solid fa-circle-check me-1"></i> Checking...
+                        </div>
+                        <div class="sg-metric-sub mt-1">
+                            <i class="fa-regular fa-clock me-1"></i> <span id="temp-last-updated">Awaiting...</span>
                         </div>
                     </div>
-                    <p class="text-secondary card-label fw-medium mb-1">Temperature</p>
-                    <h3 class="fw-bold mb-1 text-dark" id="live-temp">--°C</h3>
-                    <div class="card-subtext fw-medium" id="temp-subtext">
-                        <i class="fa-solid fa-circle-check me-1"></i> Checking...
-                    </div>
-                    <div class="text-muted card-subtext mt-1">
-                        <i class="fa-regular fa-clock me-1"></i> <span id="temp-last-updated">Awaiting updates...</span>
-                    </div>
                 </div>
-            </div>
 
-            <!-- Humidity Sensor Card -->
-            <div class="col-12 col-sm-6 col-md-4 col-xl">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="icon-shape icon-humidity mb-0">
-                            <i class="fa-solid fa-droplet"></i>
+                <!-- Humidity -->
+                <div class="col-12 col-sm-6 col-md-4 col-xl">
+                    <div class="sg-metric">
+                        <div class="sg-icon-box sg-icon-humid"><i class="fa-solid fa-droplet"></i></div>
+                        <div class="sg-metric-label">Relative Humidity</div>
+                        <div class="sg-metric-value" id="live-humidity">--%</div>
+                        <div class="sg-metric-sub fw-medium" id="humidity-subtext">
+                            <i class="fa-solid fa-circle-check me-1"></i> Checking...
+                        </div>
+                        <div class="sg-metric-sub mt-1">
+                            <i class="fa-regular fa-clock me-1"></i> <span id="humidity-last-updated">Awaiting...</span>
                         </div>
                     </div>
-                    <p class="text-secondary card-label fw-medium mb-1">Relative Humidity</p>
-                    <h3 class="fw-bold mb-1 text-dark" id="live-humidity">--%</h3>
-                    <div class="card-subtext fw-medium" id="humidity-subtext">
-                        <i class="fa-solid fa-circle-check me-1"></i> Checking...
-                    </div>
-                    <div class="text-muted card-subtext mt-1">
-                        <i class="fa-regular fa-clock me-1"></i> <span id="humidity-last-updated">Awaiting updates...</span>
-                    </div>
                 </div>
-            </div>
 
-            <!-- Water Level Sensor Card -->
-            <div class="col-12 col-sm-6 col-md-4 col-xl">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="icon-shape icon-humidity mb-0" style="background-color: #e0f2fe; color: #0284c7;">
-                            <i class="fa-solid fa-water"></i>
+                <!-- Water Level -->
+                <div class="col-12 col-sm-6 col-md-4 col-xl">
+                    <div class="sg-metric">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="sg-icon-box sg-icon-water"><i class="fa-solid fa-water"></i></div>
+                            <span id="water-badge" class="sg-badge sg-badge-idle">UNKNOWN</span>
                         </div>
-                        <span id="water-badge" class="badge badge-status status-idle">UNKNOWN</span>
-                    </div>
-                    <p class="text-secondary card-label fw-medium mb-1">Water Supply Level</p>
-                    <h3 class="fw-bold mb-1 text-dark" id="live-water">--</h3>
-                    <div class="card-subtext fw-medium" id="water-subtext">
-                        <i class="fa-solid fa-circle-info me-1"></i> Checking...
-                    </div>
-                    <div class="text-muted card-subtext mt-1">
-                        <i class="fa-regular fa-clock me-1"></i> <span id="water-last-updated">Awaiting updates...</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Exhaust Fan Relay Card -->
-            <div class="col-12 col-sm-6 col-md-4 col-xl">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="icon-shape icon-fan mb-0">
-                            <i id="fan-icon" class="fa-solid fa-fan"></i>
+                        <div class="sg-metric-label">Water Supply Level</div>
+                        <div class="sg-metric-value" id="live-water">--</div>
+                        <div class="sg-metric-sub fw-medium" id="water-subtext">
+                            <i class="fa-solid fa-circle-info me-1"></i> Checking...
                         </div>
-                        <span id="fan-badge" class="badge badge-status status-idle">IDLE</span>
-                    </div>
-                    <p class="text-secondary card-label fw-medium mb-1">Exhaust Fan</p>
-                    <h3 id="fan-text" class="fw-bold mb-1 text-dark">Standby</h3>
-                    <p class="text-muted card-subtext m-0">Auto-High Speed</p>
-                </div>
-            </div>
-
-            <!-- Water Pump Relay Card -->
-            <div class="col-12 col-sm-6 col-md-4 col-xl">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="icon-shape icon-pump mb-0">
-                            <i class="fa-solid fa-faucet-drip"></i>
+                        <div class="sg-metric-sub mt-1">
+                            <i class="fa-regular fa-clock me-1"></i> <span id="water-last-updated">Awaiting...</span>
                         </div>
-                        <span id="pump-badge" class="badge badge-status status-idle">IDLE</span>
                     </div>
-                    <p class="text-secondary card-label fw-medium mb-1">Water Pump</p>
-                    <h3 id="pump-text" class="fw-bold mb-1 text-dark">Standby</h3>
-                    <p class="text-muted card-subtext m-0">Relay State</p>
+                </div>
+
+                <!-- Cooling Fan -->
+                <div class="col-12 col-sm-6 col-md-4 col-xl">
+                    <div class="sg-metric">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="sg-icon-box sg-icon-fan"><i id="cooling-fan-icon" class="fa-solid fa-fan"></i></div>
+                            <span id="cooling-fan-badge" class="sg-badge sg-badge-idle">IDLE</span>
+                        </div>
+                        <div class="sg-metric-label">Cooling Fan</div>
+                        <div class="sg-metric-value" style="font-size:1.2rem;" id="cooling-fan-text">Standby</div>
+                        <div class="sg-metric-sub">Auto-Cooling</div>
+                    </div>
+                </div>
+
+
+                <!-- Water Pump -->
+                <div class="col-12 col-sm-6 col-md-4 col-xl">
+                    <div class="sg-metric">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="sg-icon-box sg-icon-pump"><i class="fa-solid fa-faucet-drip"></i></div>
+                            <span id="pump-badge" class="sg-badge sg-badge-idle">IDLE</span>
+                        </div>
+                        <div class="sg-metric-label">Water Pump</div>
+                        <div class="sg-metric-value" style="font-size:1.2rem;" id="pump-text">Standby</div>
+                        <div class="sg-metric-sub">Relay State</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Log Tables -->
+            <div class="row g-4">
+                <!-- Sensor Telemetry -->
+                <div class="col-12 col-xl-6">
+                    <div class="sg-card">
+                        <div class="sg-card-header">
+                            <h5 class="sg-card-title"><i class="fa-solid fa-microchip"></i> Recent Sensor Telemetry</h5>
+                            <span class="sg-badge sg-badge-idle">Last 5 records</span>
+                        </div>
+                        <div class="sg-table-wrap">
+                            <table class="sg-table">
+                                <thead>
+                                    <tr>
+                                        <th>Temp</th><th>Humidity</th><th>Water State</th><th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sensor-table-body">
+                                    <tr><td colspan="4" class="text-center text-sg-muted py-3">Awaiting system payload updates...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Machine Logs -->
+                <div class="col-12 col-xl-6">
+                    <div class="sg-card">
+                        <div class="sg-card-header">
+                            <h5 class="sg-card-title"><i class="fa-solid fa-gears"></i> Recent Machine Status Activity</h5>
+                            <span class="sg-badge sg-badge-idle">Last 5 records</span>
+                        </div>
+                        <div class="sg-table-wrap">
+                            <table class="sg-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fan</th><th>Exhaust</th><th>Water Pump</th><th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="machine-table-body">
+                                    <tr><td colspan="4" class="text-center text-sg-muted py-3">Awaiting system payload updates...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-        </div>
-        <!-- NEW: Real-time Logging Data Tables Layout -->
-        <div class="row g-4">
-            <!-- Sensor Data Logs Table -->
-            <div class="col-12 col-xl-6">
-                <div class="log-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-dark m-0"><i class="fa-solid fa-microchip text-warning me-2"></i>Recent Sensor Telemetry</h5>
-                        <span class="badge bg-light text-muted fw-normal">Last 5 records</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover border-top">
-                            <thead>
-                                <tr>
-                                    <th>Temp</th>
-                                    <th>Humidity</th>
-                                    <th>Water State</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sensor-table-body">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Awaiting system payload updates...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Machine Logs Table -->
-            <div class="col-12 col-xl-6">
-                <div class="log-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-dark m-0"><i class="fa-solid fa-gears text-purple me-2"></i>Recent Machine Status Activity</h5>
-                        <span class="badge bg-light text-muted fw-normal">Last 5 records</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover border-top">
-                            <thead>
-                                <tr>
-                                    <th>Fan</th>
-                                    <th>Exhaust</th>
-                                    <th>Water Pump</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="machine-table-body">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Awaiting system payload updates...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        </main>
     </div>
 
     <!-- Bootstrap JS Bundle -->
@@ -382,27 +232,27 @@ include "out.php";
                         Swal.fire({
                             title: 'Hardware Telemetry Warning',
                             html: `
-                            <div class="text-start fs-6">
-                                <p class="text-danger fw-semibold mb-2">
+                            <div class="text-start" style="font-size: 0.95rem; line-height: 1.6;">
+                                <p class="text-red fw-semibold mb-2" style="font-size: 1rem;">
                                     <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Device Communication Suspended</strong>
                                 </p>
-                                <p class="text-muted small mb-3">
-                                    The system has detected no active telemetry data updates for over <strong>5 minutes</strong> (Last recorded transmission: <em>${formattedAge}</em>).
+                                <p class="mb-3" style="color: #cbd5e1;">
+                                    The system has detected no active telemetry data updates for over <strong class="text-white">5 minutes</strong> (Last recorded transmission: <em class="text-white">${formattedAge}</em>).
                                 </p>
-                                <hr>
-                                <span class="fw-bold d-block mb-1 text-dark">Possible Operational Causes:</span>
-                                <ul class="text-secondary small ps-3 mb-0">
-                                    <li>Hardware controller power disruption or power loss</li>
-                                    <li>Local Wi-Fi / LAN network connection failure</li>
+                                <hr style="border-color: rgba(255, 255, 255, 0.15);">
+                                <span class="fw-bold d-block mb-2 text-white">Possible Operational Causes:</span>
+                                <ul class="ps-3 mb-0" style="color: #cbd5e1; font-size: 0.88rem;">
+                                    <li class="mb-1">Hardware controller power disruption or power loss</li>
+                                    <li class="mb-1">Local Wi-Fi / LAN network connection failure</li>
                                     <li>Sensor interface cable disconnect or module hardware error</li>
                                 </ul>
                             </div>
                         `,
                             icon: 'warning',
                             confirmButtonText: 'Acknowledge & Dismiss',
-                            confirmButtonColor: '#dc2626',
+                            confirmButtonColor: '#7c3aed',
                             allowOutsideClick: false,
-                            backdrop: `rgba(15, 23, 42, 0.6)`
+                            backdrop: `rgba(15, 23, 42, 0.75)`
                         }).then(() => {
                             isWarningModalOpen = false;
                         });
@@ -428,30 +278,30 @@ include "out.php";
                         // 2. Temperature Ranges (from settings_rule)
                         if (temp >= data.temp_on) {
                             $('#temp-subtext')
-                                .attr('class', 'text-danger card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-red fw-medium')
                                 .html('<i class="fa-solid fa-triangle-exclamation me-1"></i> High (Above ' + data.temp_on + '°C)');
                         } else if (temp <= data.temp_off) {
                             $('#temp-subtext')
-                                .attr('class', 'text-warning card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-amber fw-medium')
                                 .html('<i class="fa-solid fa-temperature-arrow-down me-1"></i> Low (Below ' + data.temp_off + '°C)');
                         } else {
                             $('#temp-subtext')
-                                .attr('class', 'text-success card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-green fw-medium')
                                 .html('<i class="fa-solid fa-circle-check me-1"></i> Optimal range (' + data.temp_off + ' - ' + data.temp_on + '°C)');
                         }
 
                         // 3. Humidity Ranges (from settings_rule)
                         if (humidity < data.humidity_on) {
                             $('#humidity-subtext')
-                                .attr('class', 'text-warning card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-amber fw-medium')
                                 .html('<i class="fa-solid fa-droplet-slash me-1"></i> Low (Below ' + data.humidity_on + '%)');
                         } else if (humidity > data.humidity_off) {
                             $('#humidity-subtext')
-                                .attr('class', 'text-danger card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-red fw-medium')
                                 .html('<i class="fa-solid fa-triangle-exclamation me-1"></i> High (Above ' + data.humidity_off + '%)');
                         } else {
                             $('#humidity-subtext')
-                                .attr('class', 'text-success card-subtext fw-medium')
+                                .attr('class', 'sg-metric-sub text-green fw-medium')
                                 .html('<i class="fa-solid fa-circle-check me-1"></i> Normal range (' + data.humidity_on + ' - ' + data.humidity_off + '%)');
                         }
 
@@ -461,16 +311,16 @@ include "out.php";
                             $('#live-water').text('NORMAL');
                             $('#water-badge')
                                 .text('OK')
-                                .removeClass('status-idle bg-danger text-white')
-                                .addClass('status-active');
-                            $('#water-subtext').html('<span class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Level adequate</span>');
+                                .removeClass('sg-badge-idle sg-badge-danger')
+                                .addClass('sg-badge-active');
+                            $('#water-subtext').html('<span class="text-green"><i class="fa-solid fa-circle-check me-1"></i> Level adequate</span>');
                         } else {
                             $('#live-water').text('LOW LEVEL');
                             $('#water-badge')
                                 .text('WARN')
-                                .removeClass('status-active status-idle')
-                                .addClass('bg-danger text-white');
-                            $('#water-subtext').html('<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Supply low</span>');
+                                .removeClass('sg-badge-active sg-badge-idle')
+                                .addClass('sg-badge-danger');
+                            $('#water-subtext').html('<span class="text-red"><i class="fa-solid fa-triangle-exclamation me-1"></i> Supply low</span>');
                         }
 
                         // 5. Timestamps
@@ -479,23 +329,34 @@ include "out.php";
                         $('#humidity-last-updated').text(timeAgoText);
                         $('#water-last-updated').text(timeAgoText);
 
-                        // 6. Fan / Exhaust UI State (Evaluated via settings_rule threshold)
-                        if (data.is_fan_running || data.is_exhaust_running) {
-                            $('#fan-badge').text('ACTIVE').removeClass('status-idle').addClass('status-active');
-                            $('#fan-text').text('Running');
-                            $('#fan-icon').addClass('spin-slow');
+                        // 6. Cooling Fan UI State
+                        if (data.is_fan_running) {
+                            $('#cooling-fan-badge, #fan-badge').text('ACTIVE').removeClass('sg-badge-idle').addClass('sg-badge-active');
+                            $('#cooling-fan-text, #fan-text').text('Running');
+                            $('#cooling-fan-icon, #fan-icon').addClass('spin-slow');
                         } else {
-                            $('#fan-badge').text('IDLE').removeClass('status-active').addClass('status-idle');
-                            $('#fan-text').text('Standby');
-                            $('#fan-icon').removeClass('spin-slow');
+                            $('#cooling-fan-badge, #fan-badge').text('IDLE').removeClass('sg-badge-active').addClass('sg-badge-idle');
+                            $('#cooling-fan-text, #fan-text').text('Standby');
+                            $('#cooling-fan-icon, #fan-icon').removeClass('spin-slow');
                         }
 
-                        // 7. Water Pump UI State (Evaluated via settings_rule threshold)
+                        // 7. Exhaust Fan UI State
+                        if (data.is_exhaust_running) {
+                            $('#exhaust-fan-badge, #exhaust-badge').text('ACTIVE').removeClass('sg-badge-idle').addClass('sg-badge-active');
+                            $('#exhaust-fan-text, #exhaust-text').text('Running');
+                            $('#exhaust-fan-icon, #exhaust-icon').addClass('spin-slow');
+                        } else {
+                            $('#exhaust-fan-badge, #exhaust-badge').text('IDLE').removeClass('sg-badge-active').addClass('sg-badge-idle');
+                            $('#exhaust-fan-text, #exhaust-text').text('Standby');
+                            $('#exhaust-fan-icon, #exhaust-icon').removeClass('spin-slow');
+                        }
+
+                        // 8. Water Pump UI State
                         if (data.is_pump_running) {
-                            $('#pump-badge').text('ACTIVE').removeClass('status-idle').addClass('status-active');
+                            $('#pump-badge').text('ACTIVE').removeClass('sg-badge-idle').addClass('sg-badge-active');
                             $('#pump-text').text('Running');
                         } else {
-                            $('#pump-badge').text('IDLE').removeClass('status-active').addClass('status-idle');
+                            $('#pump-badge').text('IDLE').removeClass('sg-badge-active').addClass('sg-badge-idle');
                             $('#pump-text').text('Standby');
                         }
 
@@ -521,18 +382,18 @@ include "out.php";
                         let sensorHtml = '';
                         if (data.sensor_logs && data.sensor_logs.length > 0) {
                             data.sensor_logs.forEach(function(row) {
-                                const waterBadge = (row.water === 'on' || row.water === 'active') ? 'bg-success' : 'bg-secondary';
+                                const waterBadge = (row.water === 'on' || row.water === 'active') ? 'sg-badge-active' : 'sg-badge-idle';
                                 const formattedTime = format12Hour(row.time);
 
                                 sensorHtml += `<tr>
                         <td class="fw-semibold text-amber">${row.temperature}°C</td>
-                        <td class="text-info">${row.humidity}%</td>
-                        <td><span class="badge ${waterBadge}">${row.water}</span></td>
-                        <td class="text-muted small">${row.date} | ${formattedTime}</td>
+                        <td class="text-cyan">${row.humidity}%</td>
+                        <td><span class="sg-badge ${waterBadge}">${row.water}</span></td>
+                        <td class="text-sg-muted" style="font-size:0.78rem;">${row.date} | ${formattedTime}</td>
                     </tr>`;
                             });
                         } else {
-                            sensorHtml = '<tr><td colspan="4" class="text-center text-muted">No telemetry logs logged yet.</td></tr>';
+                            sensorHtml = '<tr><td colspan="4" class="text-center text-sg-muted">No telemetry logs logged yet.</td></tr>';
                         }
                         $('#sensor-table-body').html(sensorHtml);
 
@@ -543,14 +404,14 @@ include "out.php";
                                 const formattedTime = format12Hour(row.time);
 
                                 machineHtml += `<tr>
-                        <td><span class="badge ${row.fan === 'on' ? 'bg-success' : 'bg-secondary'}">${row.fan}</span></td>
-                        <td><span class="badge ${row.exhaust === 'on' ? 'bg-success' : 'bg-secondary'}">${row.exhaust}</span></td>
-                        <td><span class="badge ${row.water_pump === 'on' ? 'bg-success' : 'bg-secondary'}">${row.water_pump}</span></td>
-                        <td class="text-muted small">${row.date} | ${formattedTime}</td>
+                        <td><span class="sg-badge ${row.fan === 'on' ? 'sg-badge-active' : 'sg-badge-idle'}">${row.fan}</span></td>
+                        <td><span class="sg-badge ${row.exhaust === 'on' ? 'sg-badge-active' : 'sg-badge-idle'}">${row.exhaust}</span></td>
+                        <td><span class="sg-badge ${row.water_pump === 'on' ? 'sg-badge-active' : 'sg-badge-idle'}">${row.water_pump}</span></td>
+                        <td class="text-sg-muted" style="font-size:0.78rem;">${row.date} | ${formattedTime}</td>
                     </tr>`;
                             });
                         } else {
-                            machineHtml = '<tr><td colspan="4" class="text-center text-muted">No operational state logs found.</td></tr>';
+                            machineHtml = '<tr><td colspan="4" class="text-center text-sg-muted">No operational state logs found.</td></tr>';
                         }
                         $('#machine-table-body').html(machineHtml);
                     },
