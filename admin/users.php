@@ -1,6 +1,30 @@
-﻿<?php
+<?php
 include "out.php";
 include "../include/dbcon.php";
+
+// Pre-fetch all staff users for zero-delay instant page rendering
+$initial_users = [];
+$init_total = 0;
+$init_managers = 0;
+$init_clients = 0;
+
+$u_query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
+$u_res = $conn->query($u_query);
+if ($u_res) {
+    while ($row = $u_res->fetch_assoc()) {
+        if (empty($row['first_name']) && !empty($row['name'])) {
+            $parts = explode(' ', trim($row['name']));
+            $row['last_name'] = count($parts) > 1 ? array_pop($parts) : '';
+            $row['first_name'] = implode(' ', $parts);
+        }
+        $row['first_name'] = $row['first_name'] ?? '';
+        $row['last_name'] = $row['last_name'] ?? '';
+        $initial_users[] = $row;
+        $init_total++;
+        if ($row['role'] === 'manager') $init_managers++;
+        if ($row['role'] === 'client') $init_clients++;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,7 +76,7 @@ include "../include/dbcon.php";
                             <i class="fa-solid fa-users"></i>
                         </div>
                         <div class="sg-metric-label">Total Accounts</div>
-                        <div class="sg-metric-value" id="total-users-count">0</div>
+                        <div class="sg-metric-value" id="total-users-count"><?= $init_total ?></div>
                         <div class="sg-metric-sub text-green">
                             <i class="fa-solid fa-circle-check me-1"></i> Registered profiles
                         </div>
@@ -65,7 +89,7 @@ include "../include/dbcon.php";
                             <i class="fa-solid fa-user-gear"></i>
                         </div>
                         <div class="sg-metric-label">Manager Roles</div>
-                        <div class="sg-metric-value text-cyan" id="manager-users-count">0</div>
+                        <div class="sg-metric-value text-cyan" id="manager-users-count"><?= $init_managers ?></div>
                         <div class="sg-metric-sub text-sg-muted">
                             <i class="fa-solid fa-shield-halved me-1"></i> Full system access
                         </div>
@@ -78,7 +102,7 @@ include "../include/dbcon.php";
                             <i class="fa-solid fa-user-tag"></i>
                         </div>
                         <div class="sg-metric-label">Client Roles</div>
-                        <div class="sg-metric-value text-purple" id="client-users-count">0</div>
+                        <div class="sg-metric-value text-purple" id="client-users-count"><?= $init_clients ?></div>
                         <div class="sg-metric-sub text-sg-muted">
                             <i class="fa-solid fa-eye me-1"></i> Monitoring privileges
                         </div>
@@ -89,14 +113,15 @@ include "../include/dbcon.php";
             <!-- User Data Table Section -->
             <div class="sg-card mb-4">
                 <div class="sg-card-header">
-                    <h5 class="sg-card-title"><i class="fa-solid fa-users-gear"></i> System Users</h5>
-                    <span class="sg-badge sg-badge-purple" id="table-count-badge">Loading...</span>
+                    <h5 class="sg-card-title"><i class="fa-solid fa-users-gear"></i> System Staff &amp; Users</h5>
+                    <span class="sg-badge sg-badge-purple" id="table-count-badge">Total: <?= $init_total ?> records</span>
                 </div>
                 <div class="sg-table-wrap">
                     <table class="sg-table">
                         <thead>
                             <tr>
-                                <th>User Details</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
                                 <th>Username</th>
                                 <th>Role</th>
                                 <th>Status</th>
@@ -105,11 +130,56 @@ include "../include/dbcon.php";
                             </tr>
                         </thead>
                         <tbody id="user-table-body">
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-sg-muted">
-                                    <i class="fa-solid fa-spinner fa-spin me-2"></i> Loading user accounts...
-                                </td>
-                            </tr>
+                            <?php if (count($initial_users) > 0): ?>
+                                <?php foreach ($initial_users as $u): ?>
+                                    <?php 
+                                        $initial = strtoupper(substr($u['first_name'] ?: $u['name'] ?: 'U', 0, 1));
+                                        $roleBadge = $u['role'] === 'manager' 
+                                            ? '<span class="sg-badge sg-badge-cyan"><i class="fa-solid fa-shield-halved me-1"></i>Manager</span>' 
+                                            : '<span class="sg-badge sg-badge-purple"><i class="fa-solid fa-user me-1"></i>Client</span>';
+                                        $statusBadge = ($u['status'] ?? 'active') === 'active'
+                                            ? '<span class="sg-badge sg-badge-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>'
+                                            : '<span class="sg-badge sg-badge-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Disabled</span>';
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="sg-avatar" style="width:32px;height:32px;font-size:0.75rem;">
+                                                    <?= $initial ?>
+                                                </div>
+                                                <span class="fw-bold text-white"><?= htmlspecialchars($u['first_name'] ?: $u['name']) ?></span>
+                                            </div>
+                                        </td>
+                                        <td class="text-white"><?= htmlspecialchars($u['last_name']) ?></td>
+                                        <td class="font-monospace text-sg-muted"><?= htmlspecialchars($u['username']) ?></td>
+                                        <td><?= $roleBadge ?></td>
+                                        <td><?= $statusBadge ?></td>
+                                        <td class="text-sg-muted small"><?= date('M d, Y | h:i A', strtotime($u['created_at'])) ?></td>
+                                        <td class="text-end">
+                                            <button class="action-btn me-1 edit-btn" 
+                                                data-id="<?= $u['id'] ?>" 
+                                                data-first-name="<?= htmlspecialchars($u['first_name']) ?>" 
+                                                data-last-name="<?= htmlspecialchars($u['last_name']) ?>" 
+                                                data-username="<?= htmlspecialchars($u['username']) ?>" 
+                                                data-role="<?= $u['role'] ?>"
+                                                data-status="<?= $u['status'] ?? 'active' ?>">
+                                                <i class="fa-solid fa-pen-to-square text-cyan"></i>
+                                            </button>
+                                            <button class="action-btn delete-btn" 
+                                                data-id="<?= $u['id'] ?>" 
+                                                data-name="<?= htmlspecialchars($u['name'] ?: $u['first_name']) ?>">
+                                                <i class="fa-solid fa-trash text-red"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-sg-muted">
+                                        No staff accounts found.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -129,9 +199,15 @@ include "../include/dbcon.php";
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body py-3">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-secondary">Full Name</label>
-                            <input type="text" name="name" id="add_user_name" class="form-control rounded-3" placeholder="e.g. John Doe" required>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">First Name</label>
+                                <input type="text" name="first_name" id="add_first_name" class="form-control rounded-3" placeholder="e.g. John" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Last Name</label>
+                                <input type="text" name="last_name" id="add_last_name" class="form-control rounded-3" placeholder="e.g. Doe" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Username</label>
@@ -214,9 +290,15 @@ include "../include/dbcon.php";
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body py-3">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-secondary">Full Name</label>
-                            <input type="text" name="name" id="edit_name" class="form-control rounded-3" required>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">First Name</label>
+                                <input type="text" name="first_name" id="edit_first_name" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Last Name</label>
+                                <input type="text" name="last_name" id="edit_last_name" class="form-control rounded-3" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-secondary">Username</label>
@@ -331,18 +413,21 @@ include "../include/dbcon.php";
                                         ? '<span class="sg-badge sg-badge-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>'
                                         : '<span class="sg-badge sg-badge-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Disabled</span>';
 
+                                    const firstName = user.first_name || user.name || 'User';
+                                    const lastName = user.last_name || '';
+                                    const initial = firstName.charAt(0).toUpperCase();
+
                                     rows += `
                                         <tr>
                                             <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="sg-avatar" style="width:34px;height:34px;font-size:0.8rem;">
-                                                        ${user.name.charAt(0).toUpperCase()}
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="sg-avatar" style="width:32px;height:32px;font-size:0.75rem;">
+                                                        ${initial}
                                                     </div>
-                                                    <div>
-                                                        <div class="fw-bold text-white">${escapeHtml(user.name)}</div>
-                                                    </div>
+                                                    <span class="fw-bold text-white">${escapeHtml(firstName)}</span>
                                                 </div>
                                             </td>
+                                            <td class="text-white">${escapeHtml(lastName)}</td>
                                             <td class="font-monospace text-sg-muted">${escapeHtml(user.username)}</td>
                                             <td>${roleBadge}</td>
                                             <td>${statusBadge}</td>
@@ -350,7 +435,8 @@ include "../include/dbcon.php";
                                             <td class="text-end">
                                                 <button class="action-btn me-1 edit-btn" 
                                                     data-id="${user.id}" 
-                                                    data-name="${escapeHtml(user.name)}" 
+                                                    data-first-name="${escapeHtml(firstName)}" 
+                                                    data-last-name="${escapeHtml(lastName)}" 
                                                     data-username="${escapeHtml(user.username)}" 
                                                     data-role="${user.role}"
                                                     data-status="${userStatus}">
@@ -358,7 +444,7 @@ include "../include/dbcon.php";
                                                 </button>
                                                 <button class="action-btn delete-btn" 
                                                     data-id="${user.id}" 
-                                                    data-name="${escapeHtml(user.name)}">
+                                                    data-name="${escapeHtml(firstName + ' ' + lastName).trim()}">
                                                     <i class="fa-solid fa-trash text-red"></i>
                                                 </button>
                                             </td>
@@ -366,7 +452,7 @@ include "../include/dbcon.php";
                                     `;
                                 });
                             } else {
-                                rows = '<tr><td colspan="6" class="text-center py-4 text-sg-muted">No user accounts found.</td></tr>';
+                                rows = '<tr><td colspan="7" class="text-center py-4 text-sg-muted">No staff accounts found.</td></tr>';
                             }
 
                             // Update HTML and counters
@@ -501,27 +587,28 @@ include "../include/dbcon.php";
             }
 
             // Real-Time Event Handlers: Add User Modal
-            $('#add_user_password, #add_user_username, #add_user_name').on('input', function() {
+            $('#add_user_password, #add_user_username, #add_first_name, #add_last_name').on('input', function() {
                 const pwd = $('#add_user_password').val();
                 const username = $('#add_user_username').val();
-                const name = $('#add_user_name').val();
-                const result = checkPasswordRules(pwd, username, name);
+                const fullName = ($('#add_first_name').val() + ' ' + $('#add_last_name').val()).trim();
+                const result = checkPasswordRules(pwd, username, fullName);
                 updateChecklistUI('add', result, pwd);
             });
 
             $('#addUserModal').on('show.bs.modal', function() {
                 $('#addUserForm')[0].reset();
+                $('#addUserSubmitBtn').prop('disabled', false).html('Save User');
                 $('#add_user_password').attr('type', 'password');
                 $('#addUserModal .toggle-password-btn i').removeClass('fa-eye-slash fa-solid text-primary').addClass('fa-eye fa-regular');
                 updateChecklistUI('add', checkPasswordRules('', '', ''), '');
             });
 
             // Real-Time Event Handlers: Edit User Modal
-            $('#edit_user_password, #edit_username, #edit_name').on('input', function() {
+            $('#edit_user_password, #edit_username, #edit_first_name, #edit_last_name').on('input', function() {
                 const pwd = $('#edit_user_password').val();
                 const username = $('#edit_username').val();
-                const name = $('#edit_name').val();
-                const result = checkPasswordRules(pwd, username, name);
+                const fullName = ($('#edit_first_name').val() + ' ' + $('#edit_last_name').val()).trim();
+                const result = checkPasswordRules(pwd, username, fullName);
                 updateChecklistUI('edit', result, pwd);
                 checkEditPasswordMatch();
             });
@@ -551,14 +638,14 @@ include "../include/dbcon.php";
                 }
             }
 
-            // Function 2: Add User AJAX with Password Validation Guard
+            // Function 2: Add User AJAX with Password Validation Guard & Rapid Feedback
             $('#addUserForm').on('submit', function(e) {
                 e.preventDefault();
 
                 const pwd = $('#add_user_password').val();
                 const username = $('#add_user_username').val();
-                const name = $('#add_user_name').val();
-                const val = checkPasswordRules(pwd, username, name);
+                const fullName = ($('#add_first_name').val() + ' ' + $('#add_last_name').val()).trim();
+                const val = checkPasswordRules(pwd, username, fullName);
 
                 if (!val.isValid) {
                     let missingMsg = [];
@@ -579,28 +666,40 @@ include "../include/dbcon.php";
                     return false;
                 }
 
+                const btn = $('#addUserSubmitBtn');
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Creating User...');
+
                 $.ajax({
                     url: 'function/user_actions.php',
                     type: 'POST',
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(response) {
+                        btn.prop('disabled', false).html('Save User');
                         if (response.status === 'success') {
                             $('#addUserModal').modal('hide');
                             $('#addUserForm')[0].reset();
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success',
-                                text: response.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
+                            
+                            // Immediately fetch & display user without delay
                             fetchUsers();
+
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: response.message || 'User created successfully'
+                            });
                         } else {
                             Swal.fire('Validation Error', response.message, 'error');
                         }
                     },
                     error: function() {
+                        btn.prop('disabled', false).html('Save User');
                         Swal.fire('Error', 'An unexpected error occurred while adding the user.', 'error');
                     }
                 });
@@ -609,7 +708,8 @@ include "../include/dbcon.php";
             // Function 3: Populate Edit Modal
             $(document).on('click', '.edit-btn', function() {
                 $('#edit_user_id').val($(this).data('id'));
-                $('#edit_name').val($(this).data('name'));
+                $('#edit_first_name').val($(this).data('first-name'));
+                $('#edit_last_name').val($(this).data('last-name'));
                 $('#edit_username').val($(this).data('username'));
                 $('#edit_role').val($(this).data('role'));
                 $('#edit_status').val($(this).data('status'));
@@ -628,7 +728,7 @@ include "../include/dbcon.php";
                 const pwd = $('#edit_user_password').val();
                 const confirmPwd = $('#edit_confirm_password').val();
                 const username = $('#edit_username').val();
-                const name = $('#edit_name').val();
+                const fullName = ($('#edit_first_name').val() + ' ' + $('#edit_last_name').val()).trim();
 
                 // If user entered a new password, validate it and check match
                 if (pwd.length > 0) {
@@ -642,7 +742,7 @@ include "../include/dbcon.php";
                         return false;
                     }
 
-                    const val = checkPasswordRules(pwd, username, name);
+                    const val = checkPasswordRules(pwd, username, fullName);
                     if (!val.isValid) {
                         let missingMsg = [];
                         if (!val.len) missingMsg.push("• Minimum length (8+ characters)");
@@ -663,28 +763,38 @@ include "../include/dbcon.php";
                     }
                 }
 
+                const btn = $('#editUserSubmitBtn');
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Updating...');
+
                 $.ajax({
                     url: 'function/user_actions.php',
                     type: 'POST',
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(response) {
+                        btn.prop('disabled', false).html('Update Account');
                         if (response.status === 'success') {
                             $('#editUserModal').modal('hide');
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Updated',
-                                text: response.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
                             fetchUsers();
+
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: response.message || 'User updated successfully'
+                            });
                         } else {
                             Swal.fire('Validation Error', response.message, 'error');
                         }
                     },
                     error: function() {
-                        Swal.fire('Error', 'An unexpected error occurred while updating the user.', 'error');
+                        btn.prop('disabled', false).html('Update Account');
+                        Swal.fire('Error', 'An unexpected error occurred while updating user.', 'error');
                     }
                 });
             });

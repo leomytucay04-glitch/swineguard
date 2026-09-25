@@ -7,13 +7,20 @@ $action = $_POST['action'] ?? $_GET['action'] ?? $_REQUEST['action'] ?? '';
 
 // --- 1. FETCH USERS ---
 if ($action === 'fetch') {
-    $query = "SELECT id, name, username, role, status, created_at FROM users ORDER BY id DESC";
+    $query = "SELECT id, first_name, last_name, name, username, role, status, created_at FROM users ORDER BY id DESC";
     $result = mysqli_query($conn, $query);
 
     $users = [];
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
             $row['created_at'] = date('M d, Y | h:i A', strtotime($row['created_at']));
+            if (empty($row['first_name']) && !empty($row['name'])) {
+                $parts = explode(' ', trim($row['name']));
+                $row['last_name'] = count($parts) > 1 ? array_pop($parts) : '';
+                $row['first_name'] = implode(' ', $parts);
+            }
+            $row['first_name'] = $row['first_name'] ?? '';
+            $row['last_name'] = $row['last_name'] ?? '';
             $users[] = $row;
         }
         echo json_encode(['status' => 'success', 'data' => $users]);
@@ -25,14 +32,16 @@ if ($action === 'fetch') {
 
 // --- 2. ADD USER ---
 if ($action === 'add_user') {
-    $name     = trim($_POST['name'] ?? '');
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $role     = $_POST['role'] ?? 'client';
-    $status   = $_POST['status'] ?? 'active';
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name  = trim($_POST['last_name'] ?? '');
+    $username   = trim($_POST['username'] ?? '');
+    $password   = trim($_POST['password'] ?? '');
+    $role       = $_POST['role'] ?? 'client';
+    $status     = $_POST['status'] ?? 'active';
+    $name       = trim("$first_name $last_name");
 
-    if (empty($name) || empty($username) || empty($password)) {
-        echo json_encode(['status' => 'error', 'message' => 'All required fields must be filled out']);
+    if (empty($first_name) || empty($last_name) || empty($username) || empty($password)) {
+        echo json_encode(['status' => 'error', 'message' => 'First Name, Last Name, Username, and Password are all required']);
         exit;
     }
 
@@ -61,11 +70,25 @@ if ($action === 'add_user') {
     $checkStmt->close();
 
     // INSERT NEW USER
-    $stmt = $conn->prepare("INSERT INTO users (name, username, password, role, status) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $name, $username, $password, $role, $status);
+    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, name, username, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $first_name, $last_name, $name, $username, $password, $role, $status);
 
     if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'User created successfully']);
+        $newId = $stmt->insert_id;
+        echo json_encode([
+            'status' => 'success', 
+            'message' => 'User created successfully',
+            'user' => [
+                'id' => $newId,
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'name' => $name,
+                'username' => $username,
+                'role' => $role,
+                'status' => $status,
+                'created_at' => date('M d, Y | h:i A')
+            ]
+        ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
     }
@@ -75,15 +98,17 @@ if ($action === 'add_user') {
 
 // --- 3. EDIT USER ---
 if ($action === 'edit_user') {
-    $id       = intval($_POST['user_id'] ?? 0);
-    $name     = trim($_POST['name'] ?? '');
-    $username = trim($_POST['username'] ?? '');
-    $role     = $_POST['role'] ?? 'client';
-    $status   = $_POST['status'] ?? 'active';
-    $password = trim($_POST['password'] ?? '');
+    $id         = intval($_POST['user_id'] ?? 0);
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name  = trim($_POST['last_name'] ?? '');
+    $username   = trim($_POST['username'] ?? '');
+    $role       = $_POST['role'] ?? 'client';
+    $status     = $_POST['status'] ?? 'active';
+    $password   = trim($_POST['password'] ?? '');
+    $name       = trim("$first_name $last_name");
 
-    if ($id <= 0 || empty($name) || empty($username)) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid user data provided']);
+    if ($id <= 0 || empty($first_name) || empty($last_name) || empty($username)) {
+        echo json_encode(['status' => 'error', 'message' => 'First Name, Last Name, and Username are required']);
         exit;
     }
 
@@ -113,11 +138,11 @@ if ($action === 'edit_user') {
             exit;
         }
 
-        $stmt = $conn->prepare("UPDATE users SET name = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("sssssi", $name, $username, $password, $role, $status, $id);
+        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
+        $stmt->bind_param("sssssssi", $first_name, $last_name, $name, $username, $password, $role, $status, $id);
     } else {
-        $stmt = $conn->prepare("UPDATE users SET name = ?, username = ?, role = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("ssssi", $name, $username, $role, $status, $id);
+        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, name = ?, username = ?, role = ?, status = ? WHERE id = ?");
+        $stmt->bind_param("ssssssi", $first_name, $last_name, $name, $username, $role, $status, $id);
     }
 
     if ($stmt->execute()) {
